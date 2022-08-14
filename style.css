@@ -1,0 +1,10 @@
+:root {
+    --prime: #009688;
+}
+
+body {
+    background: #efefef;
+    margin: 0;
+    padding: 16px;
+    
+}

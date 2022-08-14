@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>须臾</title>
+        <link rel="stylesheet" href="style.css" />
+        <script src="base.js"></script>
+    </head>
+    <body>
+        <h1>Track</h1>
+        <task-card id="word" icon="📖" -title="背单词"></task-card>
+        <task-card id="run" icon="🏃" -title="跑步"></task-card>
+
+        <script>
+            var database = {
+                word: 0,
+                run: 5,
+            }
+
+            class TaskCard extends HTMLElement {
+                constructor() {
+                    super()
+                    this.shadow = this.attachShadow({ mode: 'closed' })
+                    let attr = this.attributes
+                    this._data = {
+                        title: attr['-title']
+                            ? attr['-title'].value
+                            : '事项名称',
+                        icon: attr.icon ? attr.icon.value : '❤️',
+                        id: attr.id.value,
+                    }
+                    this.render()
+                    this.shadow.addEventListener('click', () => {
+                        console.log(database[this._data.id])
+                    })
+                }
+
+                render() {
+                    this.shadow.innerHTML = `
+                        <style>
+                            .card {
+                                background: #fff;
+                                padding: 16px;
+                                margin-bottom: 16px;
+                                border-radius: 16px;
+                                display: flex;
+                                align-items: center;
+                                font-size: 16px;
+                            }
+
+                            .icon {
+                                font-size: 1.5em;
+                                transform: translate3d(0, -2px, 0);
+                                height: 24px;
+                                line-height: 1em;
+                                margin-right: 8px;
+                            }
+
+                            .title {
+                                font-weight: bold;
+                                margin-right: auto;
+                            }
+
+                            .counter::after {
+                                content: '-|-';
+                            }
+                        </style>
+
+                    <div class="card">
+                        <span class="icon">${this._data.icon}</span>
+                        <div class="title">${this._data.title}</div>
+                        <span class="counter">+20min</span>
+                        <a href="javascript:;">Add</a>
+                    </div>
+                    `
+                }
+            }
+            window.customElements.define('task-card', TaskCard)
+        </script>
+    </body>
+</html>
