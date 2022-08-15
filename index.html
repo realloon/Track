@@ -10,8 +10,12 @@
     </head>
     <body>
         <h1>Track</h1>
-        <task-card id="word" icon="📖" -title="背单词"></task-card>
-        <task-card id="run" icon="🏃" -title="跑步"></task-card>
+        <div id="task-list">
+            <task-card id="word" :icon="📖" :title="背单词"></task-card>
+            <task-card id="run" :icon="🏃" :title="跑步"></task-card>
+        </div>
+
+        <add-card></add-card>
 
         <script>
             var database = {
@@ -19,22 +23,20 @@
                 run: 5,
             }
 
+            let list = document.getElementById('task-list')
+
             class TaskCard extends HTMLElement {
                 constructor() {
                     super()
                     this.shadow = this.attachShadow({ mode: 'closed' })
                     let attr = this.attributes
                     this._data = {
-                        title: attr['-title']
-                            ? attr['-title'].value
+                        title: attr[':title']
+                            ? attr[':title'].value
                             : '事项名称',
-                        icon: attr.icon ? attr.icon.value : '❤️',
-                        id: attr.id.value,
+                        icon: attr[':icon'] ? attr[':icon'].value : '❤️',
                     }
                     this.render()
-                    this.shadow.addEventListener('click', () => {
-                        console.log(database[this._data.id])
-                    })
                 }
 
                 render() {
@@ -77,7 +79,105 @@
                     `
                 }
             }
+
+            class AddCard extends HTMLElement {
+                constructor() {
+                    super()
+                    this.shadow = this.attachShadow({ mode: 'closed' })
+                    this.render()
+                    this.bindEvent()
+                }
+
+                render() {
+                    this.shadow.innerHTML = `
+                    <style>
+                        .add-card {
+                            background: #fff;
+                            padding: 0 16px 16px;
+                            box-shadow: 0 -2px 10px 4px #00000018;
+                            border-radius: 16px;
+                            display: flex;
+                            flex-direction: column;
+                            position: fixed;
+                            bottom: 0;
+                            left: 0;
+                            right: 0;
+                            transition: 1s;
+                        }
+
+                        label {
+                            margin-top: 1em;
+                            margin-bottom: 0.5em;
+                        }
+                        label:first-child {
+                            margin-top: 0;
+                        }
+
+                        .add-card input {
+                            font-size: 14px;
+                            font-weight: bold;
+                            padding: 8px 12px;
+                            border: none;
+                            border-radius: 8px;
+                            background: #efefef;
+                        }
+
+                        .top-tool {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-top: 0.5em;
+                        }
+
+                        .title {
+                            font-weight: bold;
+                            color: #009688;
+                        }
+                    </style>
+
+                    <div class="add-card">
+                        <div class="top-tool">
+                            <span id="cancel">取消</span>
+                            <span class="title">新建项目</span>
+                            <span id="done">完成</span>
+                        </div>
+                        <label for="task-name">项目名称</label>
+                        <input type="text" id="task-name" />
+                        <label for="task-icon">项目图标</label>
+                        <input type="text" id="task-icon" />
+                    </div>
+                    `
+                }
+
+                bindEvent() {
+                    const card = this.shadow.querySelector('.add-card')
+                    const cancel = this.shadow.getElementById('cancel')
+                    const done = this.shadow.getElementById('done')
+                    const name = this.shadow.getElementById('task-name')
+                    const icon = this.shadow.getElementById('task-icon')
+
+                    function hideCard() {
+                        card.style.bottom = '-220px'
+                    }
+
+                    done.addEventListener('click', () => {
+                        let task = document.createElement('div')
+                        task.innerHTML = `
+                            <task-card
+                                :title="${name.value}"
+                                :icon="${icon.value}"
+                            ></task-card>
+                        `
+                        list.appendChild(task)
+                        //
+                        hideCard()
+                    })
+
+                    cancel.addEventListener('click', hideCard)
+                }
+            }
+
             window.customElements.define('task-card', TaskCard)
+            window.customElements.define('add-card', AddCard)
         </script>
     </body>
 </html>
