@@ -6,13 +6,29 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>须臾</title>
         <link rel="stylesheet" href="style.css" />
+        <link rel="manifest" href="manifest.webmanifest" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <script src="base.js"></script>
     </head>
     <body>
-        <h1>Track</h1>
+        <honey-header :title="Track"></honey-header>
+
         <div id="task-list">
             <task-card id="word" :icon="📖" :title="背单词"></task-card>
             <task-card id="run" :icon="🏃" :title="跑步"></task-card>
+            <task-card id="wash" :icon="🛀" :title="洗澡"></task-card>
+            <task-card id="housework" :icon="🔧" :title="做家务"></task-card>
+            <task-card id="book" :icon="📚" :title="阅读"></task-card>
+            <task-card id="word" :icon="📖" :title="背单词"></task-card>
+            <task-card id="run" :icon="🏃" :title="跑步"></task-card>
+            <task-card id="wash" :icon="🛀" :title="洗澡"></task-card>
+            <task-card id="housework" :icon="🔧" :title="做家务"></task-card>
+            <task-card id="book" :icon="📚" :title="阅读"></task-card>
+            <task-card id="word" :icon="📖" :title="背单词"></task-card>
+            <task-card id="run" :icon="🏃" :title="跑步"></task-card>
+            <task-card id="wash" :icon="🛀" :title="洗澡"></task-card>
+            <task-card id="housework" :icon="🔧" :title="做家务"></task-card>
+            <task-card id="book" :icon="📚" :title="阅读"></task-card>
         </div>
 
         <add-card></add-card>
@@ -23,7 +39,10 @@
                 run: 5,
             }
 
-            let list = document.getElementById('task-list')
+            function listPush(el) {
+                const list = document.getElementById('task-list')
+                list.appendChild(el)
+            }
 
             class TaskCard extends HTMLElement {
                 constructor() {
@@ -35,8 +54,13 @@
                             ? attr[':title'].value
                             : '事项名称',
                         icon: attr[':icon'] ? attr[':icon'].value : '❤️',
+                        index: 0,
                     }
                     this.render()
+
+                    this.shadow.addEventListener('click', () => {
+                        console.log(this._data.index + ': ' + this._data.title)
+                    })
                 }
 
                 render() {
@@ -46,7 +70,7 @@
                                 background: #fff;
                                 padding: 16px;
                                 margin-bottom: 16px;
-                                border-radius: 16px;
+                                border-radius: 8px;
                                 display: flex;
                                 align-items: center;
                                 font-size: 16px;
@@ -67,6 +91,13 @@
 
                             .counter::after {
                                 content: '-|-';
+                            }
+
+                            @media (prefers-color-scheme: dark) {
+                                .card {
+                                    background: #1c1c1d;
+                                    color: #fff;
+                                }
                             }
                         </style>
 
@@ -94,12 +125,13 @@
                         .add-card {
                             background: #fff;
                             padding: 0 16px 16px;
-                            box-shadow: 0 -2px 10px 4px #00000018;
+                            margin: 16px;
+                            box-shadow: 0 0 10px 4px #00000018;
                             border-radius: 16px;
                             display: flex;
                             flex-direction: column;
                             position: fixed;
-                            bottom: 0;
+                            bottom: -240px;
                             left: 0;
                             right: 0;
                             transition: 1s;
@@ -132,6 +164,13 @@
                             font-weight: bold;
                             color: #009688;
                         }
+
+                        @media (prefers-color-scheme: dark) {
+                                .add-card {
+                                    background: #1c1c1d;
+                                    color: #fff;
+                                }
+                            }
                     </style>
 
                     <div class="add-card">
@@ -149,14 +188,17 @@
                 }
 
                 bindEvent() {
-                    const card = this.shadow.querySelector('.add-card')
                     const cancel = this.shadow.getElementById('cancel')
                     const done = this.shadow.getElementById('done')
                     const name = this.shadow.getElementById('task-name')
                     const icon = this.shadow.getElementById('task-icon')
+                    const card = this.shadow.querySelector('.add-card')
 
                     function hideCard() {
-                        card.style.bottom = '-220px'
+                        card.style.bottom = '-240px'
+                    }
+                    function showCard() {
+                        card.style.bottom = '0'
                     }
 
                     done.addEventListener('click', () => {
@@ -167,8 +209,7 @@
                                 :icon="${icon.value}"
                             ></task-card>
                         `
-                        list.appendChild(task)
-                        //
+                        listPush(task)
                         hideCard()
                     })
 
@@ -176,8 +217,59 @@
                 }
             }
 
+            class HoneyHeader extends HTMLElement {
+                constructor() {
+                    super()
+                    this.shadow = this.attachShadow({ mode: 'closed' })
+                    let attr = this.attributes
+                    this._data = {
+                        title: attr[':title']
+                            ? attr[':title'].value
+                            : '项目名称',
+                    }
+                    this.render()
+                }
+
+                render() {
+                    this.shadow.innerHTML = `
+                        <style>
+                            header {
+                                z-index: 20;
+                                background: #ededed;
+                                position: sticky;
+                                top: 0;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                height: 46px;
+                                border-bottom: 1px solid #eee;
+                            }
+
+                            h1 {
+                                font-size: 17px;
+                                font-weight: bold;
+                                line-height: 1em;
+                                margin: 0;
+                            }
+
+                            @media (prefers-color-scheme: dark) {
+                                header {
+                                    background: var(--dark);
+                                    color: #fff;
+                                    border-bottom-color: #111;
+                                }
+                            }
+                        </style>
+                        <header>
+                            <h1>${this._data.title}</h1>
+                        </header>
+                    `
+                }
+            }
+
             window.customElements.define('task-card', TaskCard)
             window.customElements.define('add-card', AddCard)
+            window.customElements.define('honey-header', HoneyHeader)
         </script>
     </body>
 </html>
