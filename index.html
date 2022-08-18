@@ -19,21 +19,18 @@
             <task-card id="wash" :icon="🛀" :title="洗澡"></task-card>
             <task-card id="housework" :icon="🔧" :title="做家务"></task-card>
             <task-card id="book" :icon="📚" :title="阅读"></task-card>
-            <task-card id="word" :icon="📖" :title="背单词"></task-card>
-            <task-card id="run" :icon="🏃" :title="跑步"></task-card>
-            <task-card id="wash" :icon="🛀" :title="洗澡"></task-card>
-            <task-card id="housework" :icon="🔧" :title="做家务"></task-card>
-            <task-card id="book" :icon="📚" :title="阅读"></task-card>
-            <task-card id="word" :icon="📖" :title="背单词"></task-card>
-            <task-card id="run" :icon="🏃" :title="跑步"></task-card>
-            <task-card id="wash" :icon="🛀" :title="洗澡"></task-card>
-            <task-card id="housework" :icon="🔧" :title="做家务"></task-card>
-            <task-card id="book" :icon="📚" :title="阅读"></task-card>
         </div>
 
         <add-card></add-card>
 
         <script>
+            function* makeRangeIterator(start = 0, end = Infinity, step = 1) {
+                for (let i = start; i < end; i += step) {
+                    yield i
+                }
+            }
+            let getId = makeRangeIterator()
+
             var database = {
                 word: 0,
                 run: 5,
@@ -54,7 +51,7 @@
                             ? attr[':title'].value
                             : '事项名称',
                         icon: attr[':icon'] ? attr[':icon'].value : '❤️',
-                        index: 0,
+                        index: getId.next().value,
                     }
                     this.render()
 
