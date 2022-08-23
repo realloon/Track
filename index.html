@@ -13,32 +13,58 @@
     <body>
         <honey-header :title="Track"></honey-header>
 
-        <div id="task-list">
-            <task-card id="word" :icon="📖" :title="背单词"></task-card>
-            <task-card id="run" :icon="🏃" :title="跑步"></task-card>
-            <task-card id="wash" :icon="🛀" :title="洗澡"></task-card>
-            <task-card id="housework" :icon="🔧" :title="做家务"></task-card>
-            <task-card id="book" :icon="📚" :title="阅读"></task-card>
-        </div>
+        <task-card-list></task-card-list>
 
         <add-card></add-card>
 
         <script>
-            function* makeRangeIterator(start = 0, end = Infinity, step = 1) {
-                for (let i = start; i < end; i += step) {
-                    yield i
+            let database = localStorage.getItem('database') || {
+                0: {
+                    id: 0,
+                    title: '背单词',
+                    icon: '📖',
+                    count: 0,
+                    time: [
+                        [1661232832157, 1661232838157],
+                        [1661232232157, 1661232832157],
+                    ],
+                },
+                1: {
+                    id: 1,
+                    title: '跑步',
+                    icon: '🏃',
+                    count: 0,
+                    time: [],
+                },
+                2: {
+                    id: 2,
+                    title: '测试',
+                    icon: '😍',
+                    count: 0,
+                    time: [],
+                },
+            }
+
+            class TaskCardList extends HTMLElement {
+                constructor() {
+                    super()
+                    this.shadow = this.attachShadow({ mode: 'closed' })
+                    this.render()
                 }
-            }
-            let getId = makeRangeIterator()
+                render() {
+                    let innerHTML = ''
 
-            var database = {
-                word: 0,
-                run: 5,
-            }
+                    for (const item of Object.keys(database)) {
+                        innerHTML += `<task-card
+                            :title="${database[item].title}" 
+                            :icon="${database[item].icon}" 
+                            :count="${database[item].count}" 
+                            :time="${database[item].time}"
+                        ></task-card>`
+                    }
 
-            function listPush(el) {
-                const list = document.getElementById('task-list')
-                list.appendChild(el)
+                    this.shadow.innerHTML = innerHTML
+                }
             }
 
             class TaskCard extends HTMLElement {
@@ -51,12 +77,12 @@
                             ? attr[':title'].value
                             : '事项名称',
                         icon: attr[':icon'] ? attr[':icon'].value : '❤️',
-                        index: getId.next().value,
+                        count: attr[':count'] ? attr[':count'].value : 0,
                     }
                     this.render()
 
                     this.shadow.addEventListener('click', () => {
-                        console.log(this._data.index + ': ' + this._data.title)
+                        console.log(this._data.title + ': ' + this._data.count)
                     })
                 }
 
@@ -66,7 +92,7 @@
                             .card {
                                 background: #fff;
                                 padding: 16px;
-                                margin-bottom: 16px;
+                                margin: 16px;
                                 border-radius: 8px;
                                 display: flex;
                                 align-items: center;
@@ -199,14 +225,7 @@
                     }
 
                     done.addEventListener('click', () => {
-                        let task = document.createElement('div')
-                        task.innerHTML = `
-                            <task-card
-                                :title="${name.value}"
-                                :icon="${icon.value}"
-                            ></task-card>
-                        `
-                        listPush(task)
+                        console.log(database)
                         hideCard()
                     })
 
@@ -267,6 +286,7 @@
             window.customElements.define('task-card', TaskCard)
             window.customElements.define('add-card', AddCard)
             window.customElements.define('honey-header', HoneyHeader)
+            window.customElements.define('task-card-list', TaskCardList)
         </script>
     </body>
 </html>
