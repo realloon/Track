@@ -1,0 +1,23 @@
+{
+    "name": "track",
+    "version": "1.0.0",
+    "description": "Record and analyze time usage.",
+    "main": "base.js",
+    "scripts": {
+        "test": "node server.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/realloon/Track.git"
+    },
+    "author": "realloon",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/realloon/Track/issues"
+    },
+    "homepage": "https://github.com/realloon/Track#readme",
+    "dependencies": {
+        "koa": "^2.0.0",
+        "koa-router": "^7.0.0"
+    }
+}
