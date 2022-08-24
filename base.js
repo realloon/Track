@@ -7,7 +7,7 @@ class Database {
             time: [[1661232832157, 1661232838157]],
         },
     }
-    
+
     static get projectName() {
         return Database._projectName
     }
@@ -31,53 +31,54 @@ class TaskCardList extends HTMLElement {
         this.shadow = this.attachShadow({ mode: 'closed' })
         this.render()
     }
-    render() {
-        let innerHTML = ''
-        const Data = Database.data
 
-        for (const item of Object.keys(Data)) {
-            innerHTML += `<task-card
-                :id="${Data[item].title}" 
-            ></task-card>`
+    render() {
+        const data = Database.data
+        const fragment = new DocumentFragment()
+
+        for (const key of Object.keys(data)) {
+            fragment.appendChild(new TaskCard(key))
         }
 
-        this.shadow.innerHTML = innerHTML
+        this.shadow.appendChild(fragment)
     }
 }
 
 class TaskCard extends HTMLElement {
-    constructor() {
+    constructor(id) {
         super()
         this.shadow = this.attachShadow({ mode: 'closed' })
 
-        this.id = this.getAttribute(':id')
+        this.id = id || this.getAttribute(':id')
         this.data = Database.data[this.id]
-        this.data.count = (() => {
-            let count = 0
-            const lists = Database.data[this.id].time
-
-            lists.forEach((list) => {
-                if (list.length === 2) {
-                    count += list[1] - list[0]
-                }
-            })
-
-            return (count / 60000).toFixed(2)
-        })()
-        this.data.lastCount = (() => {
-            const lists = Database.data[this.id].time
-            const lastList = lists[lists.length - 1]
-            let lastCount = 0
-
-            lastList.length === 2
-                ? (lastCount = lastList[1] - lastList[0])
-                : (lastCount = new Date().getTime() - lastList[0])
-
-            return (lastCount / 60000).toFixed(2)
-        })()
 
         this.render()
         this.eventBind()
+    }
+
+    get count() {
+        let count = 0
+        const lists = Database.data[this.id].time
+
+        lists.forEach((list) => {
+            if (list.length === 2) {
+                count += list[1] - list[0]
+            }
+        })
+
+        return (count / 60000).toFixed(2)
+    }
+
+    get lastCount() {
+        const lists = Database.data[this.id].time
+        const lastList = lists[lists.length - 1]
+        let lastCount = 0
+
+        lastList.length === 2
+            ? (lastCount = lastList[1] - lastList[0])
+            : (lastCount = new Date().getTime() - lastList[0])
+
+        return (lastCount / 60000).toFixed(2)
     }
 
     render() {
@@ -126,7 +127,7 @@ class TaskCard extends HTMLElement {
                 this.started ? 'red' : 'inherit'
             }">${this.data.title}</div>
             <span class="counter">${this.started ? '正在计时' : '上次计时'}：${
-            this.data.lastCount
+            this.lastCount
         }min</span>
         </div>
         `
