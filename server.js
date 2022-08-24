@@ -9,8 +9,8 @@ router.get('/', async (ctx, next) => {
     ctx.body = fs.readFileSync('index.html')
 })
 
-router.get('/static/:name', async (ctx, next) => {
-    ctx.body = fs.readFileSync('./static/' + ctx.params.name)
+router.get('/:url', async (ctx, next) => {
+    ctx.body = fs.readFileSync(ctx.params.url)
 })
 
 server.use(router.routes())
