@@ -19,9 +19,8 @@ class Database {
     }
 
     static updataTime(id, time) {
-        console.log(`updata: ${id}, ${time}`)
-        let lists = this.data[id].time
-        let lastList = lists[lists.length - 1]
+        const lists = this.data[id].time
+        const lastList = lists[lists.length - 1]
 
         lastList.length !== 2 ? lastList.push(time) : lists.push([time])
 
@@ -61,6 +60,10 @@ class TaskCard extends HTMLElement {
         this.eventBind()
     }
 
+    connectedCallback() {
+        this.updataCountView()
+    }
+
     get count() {
         let count = 0
         const lists = Database.data[this.id].time
@@ -86,13 +89,13 @@ class TaskCard extends HTMLElement {
         return (lastCount / 60000).toFixed(2)
     }
 
-    render() {
-        this.started = (() => {
-            const lists = Database.data[this.id].time
-            const lastList = lists[lists.length - 1]
-            return lastList.length !== 2
-        })()
+    get started() {
+        const lists = Database.data[this.id].time
+        const lastList = lists[lists.length - 1]
+        return lastList.length !== 2
+    }
 
+    render() {
         this.shadow.innerHTML = `
             <style>
                 .card {
@@ -128,12 +131,8 @@ class TaskCard extends HTMLElement {
 
             <div class="card">
                 <span class="icon">${this.data.icon}</span>
-                <div class="title" style="color: ${
-                    this.started ? 'red' : 'inherit'
-                }">${this.data.title}</div>
-                <span class="counter">${
-                    this.started ? '正在计时' : '上次计时'
-                }：${this.lastCount}min</span>
+                <div class="title">${this.data.title}</div>
+                <span class="counter"></span>
             </div>
         `
     }
@@ -141,7 +140,27 @@ class TaskCard extends HTMLElement {
     eventBind() {
         this.shadow.addEventListener('click', () => {
             Database.updataTime(this.id, new Date().getTime())
+            this.updataCountView()
         })
+    }
+
+    updataCountView() {
+        const countEl = this.shadow.querySelector('.counter')
+        this.started
+            ? (countEl.textContent = `正在计时：${this.lastCount}min`)
+            : (countEl.textContent = `上次计时：${this.lastCount}min`)
+
+        const that = this
+        ;(function setTime() {
+            setTimeout(() => {
+                if (that.started) {
+                    countEl.textContent = `正在计时：${that.lastCount}min`
+                    setTime()
+                } else {
+                    countEl.textContent = `上次计时：${that.lastCount}min`
+                }
+            }, 600)
+        })()
     }
 }
 
