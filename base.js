@@ -69,7 +69,7 @@ class TaskCard extends HTMLElement {
 
             lastList.length === 2
                 ? (lastCount = lastList[1] - lastList[0])
-                : (lastCount = lastList[0] - new Date().getTime())
+                : (lastCount = new Date().getTime() - lastList[0])
 
             return (lastCount / 60000).toFixed(2)
         })()
@@ -123,7 +123,9 @@ class TaskCard extends HTMLElement {
             <div class="title" style="color: ${
                 this.started ? 'red' : 'inherit'
             }">${this.data.title}</div>
-            <span class="counter">最近一次计时：${this.data.lastCount}min</span>
+            <span class="counter">${this.started ? '正在计时' : '上次计时'}：${
+            this.data.lastCount
+        }min</span>
         </div>
         `
     }
