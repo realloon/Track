@@ -1,19 +1,26 @@
-let database = localStorage.getItem('database') || {
-    背单词: {
-        title: '背单词',
-        icon: '📖',
-        count: 0,
-        time: [
-            [1661232832157, 1661232838157],
-            [1661232232157, 1661232832157],
-        ],
-    },
-    跑步: {
-        title: '跑步',
-        icon: '🏃',
-        count: 0,
-        time: [],
-    },
+class Database {
+    static _data = JSON.parse(localStorage.getItem('TrackDatabase')) || {
+        背单词: {
+            title: '背单词',
+            icon: '📖',
+            time: [[1661232832157, 1661232838157]],
+        },
+    }
+    static get data() {
+        return Database._data
+    }
+    static set data(value) {
+        Database._data = value
+    }
+
+    static updataTime(id, time) {
+        const lists = this._data[id].time
+        const lastList = lists[lists.length - 1]
+        lastList.length !== 2 ? lastList.push(time) : lists.push([time])
+
+        // 将数据本地储存
+        localStorage.setItem('TrackDatabase', JSON.stringify(this._data))
+    }
 }
 
 class TaskCardList extends HTMLElement {
@@ -24,13 +31,11 @@ class TaskCardList extends HTMLElement {
     }
     render() {
         let innerHTML = ''
+        const Data = Database.data
 
-        for (const item of Object.keys(database)) {
+        for (const item of Object.keys(Data)) {
             innerHTML += `<task-card
-                :title="${database[item].title}" 
-                :icon="${database[item].icon}" 
-                :count="${database[item].count}" 
-                :time="${database[item].time}"
+                :id="${Data[item].title}" 
             ></task-card>`
         }
 
@@ -42,20 +47,44 @@ class TaskCard extends HTMLElement {
     constructor() {
         super()
         this.shadow = this.attachShadow({ mode: 'closed' })
-        let attr = this.attributes
-        this._data = {
-            title: attr[':title'] ? attr[':title'].value : '事项名称',
-            icon: attr[':icon'] ? attr[':icon'].value : '❤️',
-            count: attr[':count'] ? attr[':count'].value : 0,
-        }
-        this.render()
 
-        this.shadow.addEventListener('click', () => {
-            console.log(this._data.title + ': ' + this._data.count)
-        })
+        this.id = this.getAttribute(':id')
+        this.data = Database.data[this.id]
+        this.data.count = (() => {
+            let count = 0
+            const lists = Database.data[this.id].time
+
+            lists.forEach((list) => {
+                if (list.length === 2) {
+                    count += list[1] - list[0]
+                }
+            })
+
+            return (count / 60000).toFixed(2)
+        })()
+        this.data.lastCount = (() => {
+            const lists = Database.data[this.id].time
+            const lastList = lists[lists.length - 1]
+            let lastCount = 0
+
+            lastList.length === 2
+                ? (lastCount = lastList[1] - lastList[0])
+                : (lastCount = lastList[0] - new Date().getTime())
+
+            return (lastCount / 60000).toFixed(2)
+        })()
+
+        this.render()
+        this.eventBind()
     }
 
     render() {
+        this.started = (() => {
+            const lists = Database.data[this.id].time
+            const lastList = lists[lists.length - 1]
+            return lastList.length !== 2
+        })()
+
         this.shadow.innerHTML = `
             <style>
                 .card {
@@ -81,10 +110,6 @@ class TaskCard extends HTMLElement {
                     margin-right: auto;
                 }
 
-                .counter::after {
-                    content: '-|-';
-                }
-
                 @media (prefers-color-scheme: dark) {
                     .card {
                         background: #1c1c1d;
@@ -94,12 +119,19 @@ class TaskCard extends HTMLElement {
             </style>
 
         <div class="card">
-            <span class="icon">${this._data.icon}</span>
-            <div class="title">${this._data.title}</div>
-            <span class="counter">+${this._data.count}min</span>
-            <a href="javascript:;">Add</a>
+            <span class="icon">${this.data.icon}</span>
+            <div class="title" style="color: ${
+                this.started ? 'red' : 'inherit'
+            }">${this.data.title}</div>
+            <span class="counter">最近一次计时：${this.data.lastCount}min</span>
         </div>
         `
+    }
+
+    eventBind() {
+        this.shadow.addEventListener('click', () => {
+            Database.updataTime(this.id, new Date().getTime())
+        })
     }
 }
 
