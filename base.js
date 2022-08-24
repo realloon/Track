@@ -103,47 +103,6 @@ class TaskCard extends HTMLElement {
     }
 }
 
-class AddCard extends HTMLElement {
-    constructor() {
-        super()
-        this.shadow = this.attachShadow({ mode: 'closed' })
-        this.render()
-        this.bindEvent()
-    }
-
-    render() {
-        this.shadow.innerHTML = ``
-    }
-
-    bindEvent() {
-        const cancel = this.shadow.getElementById('cancel')
-        const done = this.shadow.getElementById('done')
-        const name = this.shadow.getElementById('task-name')
-        const icon = this.shadow.getElementById('task-icon')
-        const card = this.shadow.querySelector('.add-card')
-        const addBtn = document.getElementById('add-btn')
-
-        function hideCard() {
-            card.style.bottom = '-240px'
-        }
-        function showCard() {
-            card.style.bottom = '0'
-        }
-
-        addBtn.addEventListener('click', () => {
-            const card = document.querySelector('.add-card')
-            card.classList.add('round')
-        })
-
-        // done.addEventListener('click', () => {
-        //     console.log(database)
-        //     hideCard()
-        // })
-
-        // cancel.addEventListener('click', hideCard)
-    }
-}
-
 class HoneyHeader extends HTMLElement {
     constructor() {
         super()
@@ -192,7 +151,6 @@ class HoneyHeader extends HTMLElement {
     }
 }
 
-window.customElements.define('task-card', TaskCard)
-window.customElements.define('add-card', AddCard)
 window.customElements.define('honey-header', HoneyHeader)
+window.customElements.define('task-card', TaskCard)
 window.customElements.define('task-card-list', TaskCardList)
