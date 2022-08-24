@@ -1,27 +1,32 @@
 class Database {
     static _projectName = 'Track'
-    static _data = JSON.parse(localStorage.getItem('TrackDatabase')) || {
-        背单词: {
-            title: '背单词',
-            icon: '📖',
-            time: [[1661232832157, 1661232838157]],
-        },
-    }
+    static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
 
     static get projectName() {
         return Database._projectName
     }
+
     static get data() {
-        return Database._data
+        return this._data
+            ? this._data
+            : {
+                  背单词: {
+                      title: '背单词',
+                      icon: '📖',
+                      time: [[1661232832157, 1661232838157]],
+                  },
+              }
     }
 
     static updataTime(id, time) {
-        const lists = this._data[id].time
-        const lastList = lists[lists.length - 1]
+        console.log(`updata: ${id}, ${time}`)
+        let lists = this.data[id].time
+        let lastList = lists[lists.length - 1]
+
         lastList.length !== 2 ? lastList.push(time) : lists.push([time])
 
         // 将数据本地储存
-        localStorage.setItem('TrackDatabase', JSON.stringify(this._data))
+        localStorage.setItem('TrackDatabase', JSON.stringify(this.data))
     }
 }
 
@@ -49,7 +54,7 @@ class TaskCard extends HTMLElement {
         super()
         this.shadow = this.attachShadow({ mode: 'closed' })
 
-        this.id = id || this.getAttribute(':id')
+        this.id = id
         this.data = Database.data[this.id]
 
         this.render()
@@ -121,15 +126,15 @@ class TaskCard extends HTMLElement {
                 }
             </style>
 
-        <div class="card">
-            <span class="icon">${this.data.icon}</span>
-            <div class="title" style="color: ${
-                this.started ? 'red' : 'inherit'
-            }">${this.data.title}</div>
-            <span class="counter">${this.started ? '正在计时' : '上次计时'}：${
-            this.lastCount
-        }min</span>
-        </div>
+            <div class="card">
+                <span class="icon">${this.data.icon}</span>
+                <div class="title" style="color: ${
+                    this.started ? 'red' : 'inherit'
+                }">${this.data.title}</div>
+                <span class="counter">${
+                    this.started ? '正在计时' : '上次计时'
+                }：${this.lastCount}min</span>
+            </div>
         `
     }
 
