@@ -1,4 +1,5 @@
 class Database {
+    static _projectName = 'Track'
     static _data = JSON.parse(localStorage.getItem('TrackDatabase')) || {
         背单词: {
             title: '背单词',
@@ -6,11 +7,12 @@ class Database {
             time: [[1661232832157, 1661232838157]],
         },
     }
+    
+    static get projectName() {
+        return Database._projectName
+    }
     static get data() {
         return Database._data
-    }
-    static set data(value) {
-        Database._data = value
     }
 
     static updataTime(id, time) {
@@ -179,7 +181,7 @@ class HoneyHeader extends HTMLElement {
                 }
             </style>
             <header>
-                <h1>${this._data.title}</h1>
+                <h1>${Database.projectName}</h1>
             </header>
         `
     }
