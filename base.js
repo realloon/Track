@@ -1,10 +1,7 @@
-class Database {
-    static _projectName = 'Track'
-    static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
+import Loon from './Loon'
 
-    static get projectName() {
-        return Database._projectName
-    }
+class Database {
+    static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
 
     static get data() {
         return this._data
@@ -164,54 +161,44 @@ class TaskCard extends HTMLElement {
     }
 }
 
-class HoneyHeader extends HTMLElement {
-    constructor() {
-        super()
-        this.shadow = this.attachShadow({ mode: 'closed' })
-        let attr = this.attributes
-        this._data = {
-            title: attr[':title'] ? attr[':title'].value : '项目名称',
+new Loon('app-header', {
+    struc: `
+        <header>
+            <h1>{{ title }}</h1>
+        </header>
+    `,
+    style: `
+        header {
+            z-index: 20;
+            background: #ededed;
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 46px;
+            border-bottom: 1px solid #eee;
         }
-        this.render()
-    }
 
-    render() {
-        this.shadow.innerHTML = `
-            <style>
-                header {
-                    z-index: 20;
-                    background: #ededed;
-                    position: sticky;
-                    top: 0;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    height: 46px;
-                    border-bottom: 1px solid #eee;
-                }
+        h1 {
+            font-size: 17px;
+            font-weight: bold;
+            line-height: 1em;
+            margin: 0;
+        }
 
-                h1 {
-                    font-size: 17px;
-                    font-weight: bold;
-                    line-height: 1em;
-                    margin: 0;
-                }
+        @media (prefers-color-scheme: dark) {
+            header {
+                background: var(--dark);
+                color: #fff;
+                border-bottom-color: #111;
+            }
+        }
+    `,
+    data: {
+        title: 'Track',
+    },
+})
 
-                @media (prefers-color-scheme: dark) {
-                    header {
-                        background: var(--dark);
-                        color: #fff;
-                        border-bottom-color: #111;
-                    }
-                }
-            </style>
-            <header>
-                <h1>${Database.projectName}</h1>
-            </header>
-        `
-    }
-}
-
-window.customElements.define('honey-header', HoneyHeader)
 window.customElements.define('task-card', TaskCard)
 window.customElements.define('task-card-list', TaskCardList)
