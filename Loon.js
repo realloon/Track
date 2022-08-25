@@ -49,6 +49,7 @@ export default class Loon {
             const key = match.replace(/({{ | }})/g, '')
             struc = struc.replace(match, this.data[key])
         })
+
         return struc
     }
 }

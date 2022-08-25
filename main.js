@@ -1,4 +1,4 @@
-import Loon from './Loon.mjs'
+import Loon from './Loon.js'
 
 class Database {
     static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
@@ -189,8 +189,10 @@ new Loon('app-header', {
 })
 
 new Loon('task-list', {
+    struc: `{{ name }} List:\n<div></div>`,
     data: {
         list: Database.data,
+        name: '项目',
     },
     customCallback: function () {
         let innerHTML = ''

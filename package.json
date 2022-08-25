@@ -4,7 +4,9 @@
     "description": "Record and analyze time usage.",
     "main": "base.js",
     "scripts": {
-        "test": "node server.js"
+        "test": "node server.js",
+        "bundle": "rollup main.js --file ./static/bundle.js",
+        "build": "rollup main.js --file ./static/bundle.js&&node server.js"
     },
     "repository": {
         "type": "git",

@@ -10,6 +10,11 @@ router.get('/', async (ctx, next) => {
 })
 
 router.get('/:url', async (ctx, next) => {
+    // ctx.
+    if (ctx.params.url.indexOf('.js') != -1) {
+        ctx.type = 'text/javascript'
+    }
+
     ctx.body = fs.readFileSync(ctx.params.url)
 })
 
