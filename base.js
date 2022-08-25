@@ -1,18 +1,25 @@
-import Loon from './Loon'
+import Loon from './Loon.mjs'
 
 class Database {
     static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
 
     static get data() {
-        return this._data
-            ? this._data
-            : {
-                  背单词: {
-                      title: '背单词',
-                      icon: '📖',
-                      time: [[1661232832157, 1661232838157]],
-                  },
-              }
+        if (this._data) {
+            return this._data
+        } else {
+            const initDatabase = {
+                背单词: {
+                    title: '背单词',
+                    icon: '📖',
+                    descript: '单词是英语的基础',
+                    time: [[1661232832157, 1661232838157]],
+                },
+            }
+
+            localStorage.setItem('TrackDatabase', JSON.stringify(initDatabase))
+
+            return initDatabase
+        }
     }
 
     static updataTime(id, time) {
@@ -26,32 +33,13 @@ class Database {
     }
 }
 
-class TaskCardList extends HTMLElement {
+class TaskCard extends HTMLElement {
     constructor() {
         super()
         this.shadow = this.attachShadow({ mode: 'closed' })
-        this.render()
-    }
 
-    render() {
-        const data = Database.data
-        const fragment = new DocumentFragment()
-
-        for (const key of Object.keys(data)) {
-            fragment.appendChild(new TaskCard(key))
-        }
-
-        this.shadow.appendChild(fragment)
-    }
-}
-
-class TaskCard extends HTMLElement {
-    constructor(id) {
-        super()
-        this.shadow = this.attachShadow({ mode: 'closed' })
-
-        this.id = id
-        this.data = Database.data[this.id]
+        this.key = this.dataset.key
+        this.data = Database.data[this.key]
 
         this.render()
         this.eventBind()
@@ -63,7 +51,7 @@ class TaskCard extends HTMLElement {
 
     get count() {
         let count = 0
-        const lists = Database.data[this.id].time
+        const lists = Database.data[this.key].time
 
         lists.forEach((list) => {
             if (list.length === 2) {
@@ -75,7 +63,7 @@ class TaskCard extends HTMLElement {
     }
 
     get lastCount() {
-        const lists = Database.data[this.id].time
+        const lists = Database.data[this.key].time
         const lastList = lists[lists.length - 1]
         let lastCount = 0
 
@@ -87,7 +75,7 @@ class TaskCard extends HTMLElement {
     }
 
     get started() {
-        const lists = Database.data[this.id].time
+        const lists = Database.data[this.key].time
         const lastList = lists[lists.length - 1]
         return lastList.length !== 2
     }
@@ -136,7 +124,7 @@ class TaskCard extends HTMLElement {
 
     eventBind() {
         this.shadow.addEventListener('click', () => {
-            Database.updataTime(this.id, new Date().getTime())
+            Database.updataTime(this.key, new Date().getTime())
             this.updataCountView()
         })
     }
@@ -200,5 +188,19 @@ new Loon('app-header', {
     },
 })
 
+new Loon('task-list', {
+    data: {
+        list: Database.data,
+    },
+    customCallback: function () {
+        let innerHTML = ''
+
+        for (const key of Object.keys(this.data.list)) {
+            innerHTML += `<task-card data-key="${key}">hello</task-card>`
+        }
+
+        this.$element.innerHTML = innerHTML
+    },
+})
+
 window.customElements.define('task-card', TaskCard)
-window.customElements.define('task-card-list', TaskCardList)
