@@ -45,9 +45,9 @@ export default class Loon {
     get struc() {
         let struc = this.__struc
 
-        this.__struc.replace(/{{\s\w+\s}}/g, (martch) => {
-            const key = martch.replace(/({{ | }})/g, '')
-            struc = struc.replace(martch, this.data[key])
+        this.__struc.replace(/{{\s\w+\s}}/g, (match) => {
+            const key = match.replace(/({{ | }})/g, '')
+            struc = struc.replace(match, this.data[key])
         })
         return struc
     }
