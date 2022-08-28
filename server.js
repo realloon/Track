@@ -10,8 +10,10 @@ router.get('/', async (ctx, next) => {
 })
 
 router.get('/:url', async (ctx, next) => {
-    // ctx.
-    if (ctx.params.url.indexOf('.js') != -1) {
+    if (
+        ctx.params.url.indexOf('.js') != -1 ||
+        ctx.params.url.indexOf('.mjs') != -1
+    ) {
         ctx.type = 'text/javascript'
     }
 
@@ -20,5 +22,5 @@ router.get('/:url', async (ctx, next) => {
 
 server.use(router.routes())
 
-server.listen(5050)
-console.log('http://127.0.0.1:5050')
+server.listen(9000)
+console.log('http://127.0.0.1:9000')

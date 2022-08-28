@@ -4,26 +4,25 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>须臾</title>
+        <title>Track</title>
         <style>
             :root {
                 --prime: #f2f1f6;
-                --dark: #000;
+                --font-color: #333;
+                --borad-radius: 8px;
             }
 
             body {
+                font-size: 16px;
                 background: var(--prime);
                 margin: 0;
                 padding: 0;
             }
 
-            #task-list {
-                margin: 16px;
-            }
-
             @media (prefers-color-scheme: dark) {
-                body {
-                    background: var(--dark);
+                :root {
+                    --prime: #000;
+                    --font-color: #fff;
                 }
             }
         </style>
@@ -36,5 +35,7 @@
         <task-list></task-list>
 
         <add-card></add-card>
+
+        <develop-card></develop-card>
     </body>
 </html>

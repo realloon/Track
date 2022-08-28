@@ -1,20 +1,22 @@
 export default class Loon {
     constructor(tagName, parms) {
-        this.data = new Proxy(parms.data, {
-            get: (target, property) => {
-                return Reflect.get(target, property)
-            },
-            set: (target, property, value) => {
-                if (!target[property]) return false
+        this.data = parms.data
+            ? new Proxy(parms.data, {
+                  get: (target, property) => {
+                      return Reflect.get(target, property)
+                  },
+                  set: (target, property, value) => {
+                      if (!target[property]) return false
 
-                if (Reflect.get(target, property) !== value) {
-                    Reflect.set(target, property, value)
-                    that.$element.innerHTML = `${this.style}\n${this.struc}`
-                }
+                      if (Reflect.get(target, property) !== value) {
+                          Reflect.set(target, property, value)
+                          that.$element.innerHTML = `${this.style}\n${this.struc}`
+                      }
 
-                return true
-            },
-        })
+                      return true
+                  },
+              })
+            : {}
 
         this.__style = parms.style ? `<style>${parms.style}</style>` : ''
         this.__struc = parms.struc ? `${parms.struc}` : ''
