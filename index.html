@@ -7,30 +7,63 @@
         <title>Track</title>
         <style>
             :root {
-                --prime: #f2f1f6;
+                --app-ground: #f2f1f6;
+                --controls-ground: #fff;
                 --font-color: #333;
                 --borad-radius: 8px;
             }
 
             body {
                 font-size: 16px;
-                background: var(--prime);
+                background: var(--app-ground);
                 margin: 0;
                 padding: 0;
             }
 
             @media (prefers-color-scheme: dark) {
                 :root {
-                    --prime: #000;
+                    --app-ground: #000;
+                    --controls-ground: #1c1c1d;
                     --font-color: #fff;
                 }
             }
         </style>
-        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <!-- <meta name="apple-mobile-web-app-status-bar-style" content="black" /> -->
         <script src="./main.js" type="module"></script>
     </head>
     <body>
         <app-header></app-header>
+
+        <style>
+            extract-card {
+                border-radius: var(--borad-radius);
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                margin: 16px;
+                padding: 16px;
+                background: var(--controls-ground);
+            }
+
+            h3,
+            p {
+                font-size: initial;
+                margin: 0;
+            }
+
+
+        </style>
+        <extract-card>
+            <div class="left">
+                <h3>今日专注时长</h3>
+                <p>20/120min</p>
+                <h3>专注事项</h3>
+                <p>4</p>
+            </div>
+
+            <!--  -->
+
+        </extract-card>
 
         <task-list></task-list>
 

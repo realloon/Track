@@ -1,5 +1,6 @@
 import Loon from './Loon.js'
 
+// FIXME: Proxy 存在严重问题
 export class Database {
     //FIXME: 初始化时应及时处理
     static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
@@ -23,6 +24,13 @@ export class Database {
         }
     }
 
+    static set data(value) {
+        this._data = value
+        this.saveData()
+        // FIXME: 不应该这样
+        location.reload()
+    }
+
     static saveData() {
         localStorage.setItem('TrackDatabase', JSON.stringify(this.data))
     }
@@ -38,15 +46,16 @@ export class Database {
     }
 
     static addTaskItems(icon, title, descript) {
-        const newItems = {
+        const addItems = {
             title: title,
             icon: icon,
             descript: descript,
             time: [[0, 0]],
         }
 
-        this.data[title] = newItems
-        this.saveData()
+        this.data[title] = addItems
+        // 强制触发 setter
+        this.data = this.data
     }
 
     static exportDataFile() {
@@ -54,6 +63,16 @@ export class Database {
             const downloadFile = (await import('./downloadFile.js')).default
             downloadFile(Database.data)
         })()
+    }
+
+    static importDataFile(file) {
+        const reader = new FileReader()
+        reader.readAsText(file)
+
+        reader.onload = function () {
+            const obj = JSON.parse(this.result)
+            Database.data = obj
+        }
     }
 
     static clearData() {
@@ -186,7 +205,7 @@ new Loon('app-header', {
     style: `
         header {
             z-index: 20;
-            background: var(--prime);
+            background: var(--app-ground);
             position: sticky;
             top: 0;
             display: flex;
@@ -335,15 +354,19 @@ new Loon('develop-card', {
         div {
             display: flex;
             flex-direction: column;
-            background: var(--prime);
+            background: #fff;
             margin: 16px;
             padding: 16px;
+            font-size: 14px;
         }
     `,
     struc: `
         <div>
             <button id="clear">清除页面储存</button>
+            <hr />
             <button id="save">保存数据到本地</button>
+            <hr />
+            <label>上传本地数据<br /><input type="file" id="file" /></label>
         </div>
     `,
     constructCallback: function () {
@@ -352,6 +375,14 @@ new Loon('develop-card', {
 
         const saveEl = this.$element.querySelector('#save')
         saveEl.addEventListener('click', Database.exportDataFile)
+
+        const fileEl = this.$element.querySelector('#file')
+        fileEl.addEventListener('change', fileHandle)
+
+        function fileHandle() {
+            const file = this.files[0]
+            Database.importDataFile(file)
+        }
     },
 })
 
