@@ -234,6 +234,102 @@ new Loon('app-header', {
     },
 })
 
+new Loon('extract-card', {
+    struc: `
+        <div class="left">
+            <h3>今日专注时长</h3>
+            <p class="theme">{{ currentCount }}/{{ totalCount }}min</p>
+            <h3>专注事项</h3>
+            <p>{{ tasks }}</p>
+        </div>
+
+        <svg xmlns="http://www.w3.org/200/svg" height="100" width="100">
+            <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="#f4433650"
+                stroke-width="16"
+                stroke-linecap="round"
+            />
+            <circle
+                id="ring"
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="var(--theme-color)"
+                stroke-width="16"
+                stroke-dasharray="0,10000"
+            />
+        </svg>
+    `,
+    style: `
+        :host {
+            border-radius: var(--borad-radius);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin: 16px;
+            padding: 16px;
+            background: var(--controls-ground);
+            color: var(--font-color);
+        }
+
+        h3,
+        p {
+            font-size: initial;
+            margin: 0;
+            line-height: 1em;
+        }
+
+        h3 {
+            margin-top: .8rem;
+        }
+        h3:first-child {
+            margin-top: 0;
+        }
+
+        p {
+            margin-top: .25rem;
+            font-weight: bold;
+            color: var(--gray-font-color);
+        }
+
+        #ring {
+            transform-origin: center;
+            transform: rotate(-90deg);
+            transition: stroke-dasharray 0.3s ease-in;
+        }
+
+        .theme {
+            color: var(--theme-color);
+        }
+    `,
+    data: {
+        currentCount: 80,
+        totalCount: 120,
+        tasks: 4,
+    },
+    constructCallback: function () {
+        const ringEl = this.$element.querySelector('#ring')
+
+        const r = ringEl.getAttribute('r')
+        const circleLength = Math.floor(2 * Math.PI * r)
+
+        // TODO
+        function rotateCircle(value = 0) {
+            value = (circleLength * value) / 100
+
+            ringEl.setAttribute('stroke-dasharray', `${value},${circleLength}`)
+        }
+
+        const value = (this.data.currentCount / this.data.totalCount) * 100
+        rotateCircle(value)
+    },
+})
+
 new Loon('task-list', {
     struc: `{{ name }} List:\n<div></div>`,
     data: {
@@ -264,14 +360,14 @@ new Loon('add-card', {
 
         h2 {
             font-size: 1.25rem;
-            margin: 0 0 16px 0;
+            margin: 0 0 .5rem 0;
         }
 
         .row {
             display: flex;
             align-content: center;
             align-items: baseline;
-            margin-bottom: 16px;
+            margin-bottom: .5rem;
         }
 
         input {
@@ -291,7 +387,7 @@ new Loon('add-card', {
             box-sizing: border-box;
             width: 4em;
             border: none;
-            margin: 16px 0 0 auto;
+            margin: 1rem 0 0 auto;
         }
 
         #task-icon {
@@ -315,12 +411,12 @@ new Loon('add-card', {
                     type="text"
                     name="task-icon"
                     id="task-icon"
-                    value="😍"
+                    value="🏃"
                 /><input
                     type="text"
                     name="task-title"
                     id="task-title"
-                    value="任务"
+                    value="跑步"
                 />
             </div>
             <label for="task-descript">描述</label>
@@ -351,23 +447,37 @@ new Loon('add-card', {
 
 new Loon('develop-card', {
     style: `
-        div {
+        :host {
             display: flex;
             flex-direction: column;
-            background: #fff;
+            background: var(--controls-ground);
+            color: var(--font-color)
             margin: 16px;
             padding: 16px;
             font-size: 14px;
         }
+
+        label {
+            color: var(--font-color);
+        }
+
+        h3 {
+            margin: 0 0 .5rem 0;
+            color: var(--font-color);
+        }
+
+        button {
+            display: block;
+            margin-bottom: 1rem;
+        }
     `,
     struc: `
-        <div>
+            <h3>Developer Setting</h3>
             <button id="clear">清除页面储存</button>
-            <hr />
             <button id="save">保存数据到本地</button>
-            <hr />
-            <label>上传本地数据<br /><input type="file" id="file" /></label>
-        </div>
+            <label>
+                <input type="file" id="file" />
+            </label>
     `,
     constructCallback: function () {
         const clearEl = this.$element.querySelector('#clear')
