@@ -7,7 +7,7 @@ export default function downloadFile(data) {
 
     element.setAttribute(
         'href',
-        'data:text/plain;charset=utf-8,' + JSON.stringify(data)
+        'data:application/json;charset=utf-8,' + JSON.stringify(data)
     )
     element.setAttribute('download', `TrackFile_${timestamp}.json`)
     element.style.display = 'none'

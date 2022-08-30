@@ -196,6 +196,53 @@ class TaskCard extends HTMLElement {
     }
 }
 
+// 实现了双向绑定
+class H2 extends HTMLElement {
+    constructor() {
+        super()
+        this.shadow = this.attachShadow({ mode: 'closed' })
+        this._data = this.dataset.content // <- !
+
+        this.render()
+
+        this.titleEl = this.shadow.getElementById('title')
+    }
+
+    get data() {
+        return this._data
+    }
+
+    set data(value) {
+        if (this._data === value) return
+
+        this._data = value
+        this.setAttribute('data-content', value)
+    }
+
+    render() {
+        this.shadow.innerHTML = `
+            <style>
+                h2 {
+                    font-size: 1.125rem;
+                    line-height: 1em;
+                    color: var(--font-color);
+                    margin: 1.5rem 0 -0.5rem 1rem;
+                }
+            </style>
+            <h2 id="title"></h2>
+        `
+    }
+
+    static get observedAttributes() {
+        return ['data-content']
+    }
+
+    attributeChangedCallback(target, oldValue, newValue) {
+        this.data = newValue
+        this.titleEl.textContent = newValue
+    }
+}
+
 new Loon('app-header', {
     struc: `
         <header>
@@ -236,37 +283,41 @@ new Loon('app-header', {
 
 new Loon('extract-card', {
     struc: `
-        <div class="left">
-            <h3>今日专注时长</h3>
-            <p class="theme">{{ currentCount }}/{{ totalCount }}min</p>
-            <h3>专注事项</h3>
-            <p>{{ tasks }}</p>
-        </div>
+        <app-h2 data-content="{{ title }}"></app-h2>
 
-        <svg xmlns="http://www.w3.org/200/svg" height="100" width="100">
-            <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="#f4433650"
-                stroke-width="16"
-                stroke-linecap="round"
-            />
-            <circle
-                id="ring"
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="var(--theme-color)"
-                stroke-width="16"
-                stroke-dasharray="0,10000"
-            />
-        </svg>
+        <div class="card">
+            <div>
+                <h3>今日专注时长</h3>
+                <p class="theme">{{ currentCount }}/{{ totalCount }}min</p>
+                <h3>专注事项</h3>
+                <p>{{ tasks }}</p>
+            </div>
+
+            <svg xmlns="http://www.w3.org/200/svg" height="100" width="100">
+                <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#f4433650"
+                    stroke-width="16"
+                    stroke-linecap="round"
+                />
+                <circle
+                    id="ring"
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="var(--theme-color)"
+                    stroke-width="16"
+                    stroke-dasharray="0,10000"
+                />
+            </svg>
+        </div>
     `,
     style: `
-        :host {
+        .card {
             border-radius: var(--borad-radius);
             display: flex;
             align-items: flex-start;
@@ -311,6 +362,7 @@ new Loon('extract-card', {
         currentCount: 80,
         totalCount: 120,
         tasks: 4,
+        title: '总览',
     },
     constructCallback: function () {
         const ringEl = this.$element.querySelector('#ring')
@@ -333,11 +385,11 @@ new Loon('extract-card', {
 new Loon('task-list', {
     struc: `{{ name }} List:\n<div></div>`,
     data: {
+        title: '项目',
         list: Database.data,
-        name: '项目',
     },
     customCallback: function () {
-        let innerHTML = ''
+        let innerHTML = `<app-h2 data-content="${this.data.title}"></app-h2>`
 
         for (const key of Object.keys(this.data.list)) {
             innerHTML += `<task-card data-key="${key}">hello</task-card>`
@@ -354,13 +406,9 @@ new Loon('add-card', {
             flex-direction: column;
             padding: 16px;
             margin: 16px;
-            background: #fff;
+            background: var(--controls-ground);
             border-radius: var(--borad-radius);
-        }
-
-        h2 {
-            font-size: 1.25rem;
-            margin: 0 0 .5rem 0;
+            color: var(--font-color);
         }
 
         .row {
@@ -395,17 +443,11 @@ new Loon('add-card', {
             text-align: center;
             margin-right: 16px;
         }
-
-        @media (prefers-color-scheme: dark) {
-            form {
-                background: #1c1c1d;
-                color: #fff;
-            }
-        }
     `,
     struc: `
+        <app-h2 data-content="{{ title }}"></app-h2>
+        
         <form action="./test" method="post">
-            <h2>添加新任务</h2>
             <div class="row">
                 <input
                     type="text"
@@ -424,6 +466,9 @@ new Loon('add-card', {
             <button type="submit">保存</button>
         </form>
     `,
+    data: {
+        title: '添加新任务',
+    },
     constructCallback: function () {
         const iconEl = this.$element.querySelector('#task-icon')
         const titleEl = this.$element.querySelector('#task-title')
@@ -472,9 +517,9 @@ new Loon('develop-card', {
         }
     `,
     struc: `
-            <h3>Developer Setting</h3>
+            <h3>⚠️ Developer Setting</h3>
+            <button id="save">保存数据库到本地</button>
             <button id="clear">清除页面储存</button>
-            <button id="save">保存数据到本地</button>
             <label>
                 <input type="file" id="file" />
             </label>
@@ -497,3 +542,4 @@ new Loon('develop-card', {
 })
 
 window.customElements.define('task-card', TaskCard)
+window.customElements.define('app-h2', H2)
