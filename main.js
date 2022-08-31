@@ -201,22 +201,29 @@ class H2 extends HTMLElement {
     constructor() {
         super()
         this.shadow = this.attachShadow({ mode: 'closed' })
-        this._data = this.dataset.content // <- !
 
         this.render()
 
-        this.titleEl = this.shadow.getElementById('title')
+        const that = this
+        this._data = new Proxy(this.dataset, {
+            set(target, property, value) {
+                if (that.dataset[property] !== value) {
+                    Reflect.set(target, property, value)
+                    // 绑定操作书写处
+                    that.updataTitle(value)
+                }
+                return true
+            },
+        })
     }
 
-    get data() {
-        return this._data
+    static get observedAttributes() {
+        return ['data-content']
     }
 
-    set data(value) {
-        if (this._data === value) return
-
-        this._data = value
-        this.setAttribute('data-content', value)
+    attributeChangedCallback(target, oldValue, newValue) {
+        // 绑定操作书写处
+        this.updataTitle(newValue)
     }
 
     render() {
@@ -233,17 +240,13 @@ class H2 extends HTMLElement {
         `
     }
 
-    static get observedAttributes() {
-        return ['data-content']
-    }
-
-    attributeChangedCallback(target, oldValue, newValue) {
-        this.data = newValue
-        this.titleEl.textContent = newValue
+    updataTitle(title) {
+        const titleNode = this.shadow.getElementById('title')
+        titleNode.textContent = title
     }
 }
 
-new Loon('app-header', {
+const header = new Loon('app-header', {
     struc: `
         <header>
             <h1>{{ title }}</h1>
@@ -365,7 +368,7 @@ new Loon('extract-card', {
         title: '总览',
     },
     constructCallback: function () {
-        const ringEl = this.$element.querySelector('#ring')
+        const ringEl = this.$shadowRoot.querySelector('#ring')
 
         const r = ringEl.getAttribute('r')
         const circleLength = Math.floor(2 * Math.PI * r)
@@ -383,19 +386,18 @@ new Loon('extract-card', {
 })
 
 new Loon('task-list', {
-    struc: `{{ name }} List:\n<div></div>`,
     data: {
         title: '项目',
         list: Database.data,
     },
     customCallback: function () {
-        let innerHTML = `<app-h2 data-content="${this.data.title}"></app-h2>`
+        const array = []
+        array.push(`<app-h2 data-content="${this.data.title}"></app-h2>`)
 
         for (const key of Object.keys(this.data.list)) {
-            innerHTML += `<task-card data-key="${key}">hello</task-card>`
+            array.push(`<task-card data-key="${key}">hello</task-card>`)
         }
-
-        this.$element.innerHTML = innerHTML
+        this.$shadowRoot.innerHTML = array.join('')
     },
 })
 
@@ -470,10 +472,10 @@ new Loon('add-card', {
         title: '添加新任务',
     },
     constructCallback: function () {
-        const iconEl = this.$element.querySelector('#task-icon')
-        const titleEl = this.$element.querySelector('#task-title')
-        const descriptEl = this.$element.querySelector('#task-descript')
-        const submitEl = this.$element.querySelector('button')
+        const iconEl = this.$shadowRoot.querySelector('#task-icon')
+        const titleEl = this.$shadowRoot.querySelector('#task-title')
+        const descriptEl = this.$shadowRoot.querySelector('#task-descript')
+        const submitEl = this.$shadowRoot.querySelector('button')
 
         submitEl.addEventListener('click', (event) => {
             event.preventDefault()
@@ -525,13 +527,13 @@ new Loon('develop-card', {
             </label>
     `,
     constructCallback: function () {
-        const clearEl = this.$element.querySelector('#clear')
+        const clearEl = this.$shadowRoot.querySelector('#clear')
         clearEl.addEventListener('click', Database.clearData)
 
-        const saveEl = this.$element.querySelector('#save')
+        const saveEl = this.$shadowRoot.querySelector('#save')
         saveEl.addEventListener('click', Database.exportDataFile)
 
-        const fileEl = this.$element.querySelector('#file')
+        const fileEl = this.$shadowRoot.querySelector('#file')
         fileEl.addEventListener('change', fileHandle)
 
         function fileHandle() {
@@ -543,3 +545,10 @@ new Loon('develop-card', {
 
 window.customElements.define('task-card', TaskCard)
 window.customElements.define('app-h2', H2)
+
+const hello = new Loon('app-hello', {
+    data: {
+        title: '标题',
+    },
+    struc: `<input data-value="title"></input>`,
+})

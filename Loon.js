@@ -1,16 +1,16 @@
 export default class Loon {
-    constructor(tagName, parms) {
+    constructor(tagName, parms = {}) {
+        this.__style = parms.style ? `<style>${parms.style}</style>` : ''
+        this.__struc = parms.struc ? parms.struc : ''
+
         this.data = parms.data
             ? new Proxy(parms.data, {
-                  get: (target, property) => {
-                      return Reflect.get(target, property)
-                  },
                   set: (target, property, value) => {
-                      if (!target[property]) return false
-
                       if (Reflect.get(target, property) !== value) {
                           Reflect.set(target, property, value)
-                          that.$element.innerHTML = `${this.style}\n${this.struc}`
+                          //   Doing
+                          that.$shadowRoot.innerHTML = `${this.style}\n${this.struc}`
+                          console.log('触发了 shadowRoot.innerHTML 重绘')
                       }
 
                       return true
@@ -18,21 +18,41 @@ export default class Loon {
               })
             : {}
 
-        this.__style = parms.style ? `<style>${parms.style}</style>` : ''
-        this.__struc = parms.struc ? `${parms.struc}` : ''
-
         const that = this
         class newElemnt extends HTMLElement {
             constructor() {
                 super()
                 this.shadow = this.attachShadow({ mode: 'closed' })
-
                 this.shadow.innerHTML = `${that.style}\n${that.struc}`
 
-                // 将影子 DOM 绑定到 Loon 实例上
-                that.$element = this.shadow
+                this.bindAttr()
 
+                // 暴露内部属性
+                that.$HTMLElement = this
+                that.$shadowRoot = this.shadow
                 if (parms.constructCallback) parms.constructCallback.call(that)
+            }
+
+            static get observedAttributes() {
+                return ['data-value']
+            }
+
+            connectedCallback() {}
+
+            attributeChangedCallback(target, oldValue, newValue) {
+                // 绑定操作书写处
+                console.log('done')
+            }
+
+            bindAttr() {
+                // Doing
+                const textNodeHadnle = this.shadow.querySelectorAll('[-text]')
+                if (textNodeHadnle.length) {
+                    textNodeHadnle.forEach((el) => {
+                        const value = that.data[el.getAttribute('-text')]
+                        el.textContent = value
+                    })
+                }
             }
         }
 
@@ -47,10 +67,14 @@ export default class Loon {
     get struc() {
         let struc = this.__struc
 
-        this.__struc.replace(/{{\s\w+\s}}/g, (match) => {
-            const key = match.replace(/({{ | }})/g, '')
-            struc = struc.replace(match, this.data[key])
-        })
+        const isTemplate = /{{\s\w+\s}}/.test(struc)
+
+        if (isTemplate) {
+            this.__struc.replace(/{{\s\w+\s}}/g, (match) => {
+                const key = match.replace(/({{ | }})/g, '')
+                struc = struc.replace(match, this.data[key])
+            })
+        }
 
         return struc
     }
