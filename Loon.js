@@ -8,9 +8,9 @@ export default class Loon {
                   set: (target, property, value) => {
                       if (Reflect.get(target, property) !== value) {
                           Reflect.set(target, property, value)
-                          //   Doing
-                          that.$shadowRoot.innerHTML = `${this.style}\n${this.struc}`
-                          console.log('触发了 shadowRoot.innerHTML 重绘')
+                          // FIXME: 不应该每次 set 数据都触发重绘 || <slot>
+                          that.$shadowRoot.innerHTML = this.style + this.struc
+                          console.log('触发了 innerHTML 重绘')
                       }
 
                       return true
@@ -23,20 +23,21 @@ export default class Loon {
             constructor() {
                 super()
                 this.shadow = this.attachShadow({ mode: 'closed' })
-                this.shadow.innerHTML = `${that.style}\n${that.struc}`
+                // 缓存结果
+                this.shadow.innerHTML = that.style + that.struc
 
-                this.bindAttr()
+                this.bindAttrHandle()
 
                 // 暴露内部属性
                 that.$HTMLElement = this
                 that.$shadowRoot = this.shadow
-                if (parms.constructCallback) parms.constructCallback.call(that)
             }
 
             static get observedAttributes() {
-                return ['data-value']
+                return []
             }
 
+            // 添加到 DOM 中时触发
             connectedCallback() {}
 
             attributeChangedCallback(target, oldValue, newValue) {
@@ -44,20 +45,68 @@ export default class Loon {
                 console.log('done')
             }
 
-            bindAttr() {
+            bindAttrHandle() {
                 // Doing
-                const textNodeHadnle = this.shadow.querySelectorAll('[-text]')
-                if (textNodeHadnle.length) {
-                    textNodeHadnle.forEach((el) => {
+                const textNode = this.shadow.querySelectorAll('[-text]')
+                if (textNode.length) {
+                    textNode.forEach((el) => {
                         const value = that.data[el.getAttribute('-text')]
                         el.textContent = value
                     })
                 }
+
+                // Doing input
+                const inputNode = this.shadow.querySelectorAll('[data-input]')
+                if (inputNode.length) {
+                    inputNode.forEach((el) => {
+                        const key = el.dataset.input
+
+                        const sync = new Proxy(el.dataset, {
+                            set: (target, property, value) => {
+                                Reflect.set(target, property, value)
+                                // Doing
+                                el.value = that.data[key]
+                                return true
+                            },
+                        })
+
+                        sync.input = that.data[key]
+
+                        el.addEventListener('input', (e) => {
+                            that.data[key] = e.target.value
+                        })
+                    })
+                }
+
+                // const inputLazyNode =
+                //     this.shadow.querySelectorAll('[data-input-lazy]')
+                // if (inputLazyNode.length) {
+                //     inputLazyNode.forEach((el) => {
+                //         const sync = new Proxy(el.dataset, {
+                //             set: (target, property, value) => {
+                //                 Reflect.set(target, property, value)
+                //                 // Doing
+                //                 el.value = value
+                //                 return true
+                //             },
+                //         })
+
+                //         el.addEventListener('change', (e) => {
+                //             sync.valueLazy = e.target.value
+                //         })
+
+                //         sync.valueLazy = that.data[el.dataset.valueLazy]
+                //     })
+                // }
             }
         }
 
         customElements.define(tagName, newElemnt)
-        if (parms.customCallback) parms.customCallback.call(this)
+
+        // Callback
+        if (parms.customCallback) {
+            parms.customCallback.call(this)
+        }
     }
 
     get style() {
@@ -70,7 +119,7 @@ export default class Loon {
         const isTemplate = /{{\s\w+\s}}/.test(struc)
 
         if (isTemplate) {
-            this.__struc.replace(/{{\s\w+\s}}/g, (match) => {
+            struc.replace(/{{\s\w+\s}}/g, (match) => {
                 const key = match.replace(/({{ | }})/g, '')
                 struc = struc.replace(match, this.data[key])
             })

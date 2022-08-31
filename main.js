@@ -367,7 +367,7 @@ new Loon('extract-card', {
         tasks: 4,
         title: '总览',
     },
-    constructCallback: function () {
+    customCallback: function () {
         const ringEl = this.$shadowRoot.querySelector('#ring')
 
         const r = ringEl.getAttribute('r')
@@ -471,7 +471,7 @@ new Loon('add-card', {
     data: {
         title: '添加新任务',
     },
-    constructCallback: function () {
+    customCallback: function () {
         const iconEl = this.$shadowRoot.querySelector('#task-icon')
         const titleEl = this.$shadowRoot.querySelector('#task-title')
         const descriptEl = this.$shadowRoot.querySelector('#task-descript')
@@ -526,7 +526,7 @@ new Loon('develop-card', {
                 <input type="file" id="file" />
             </label>
     `,
-    constructCallback: function () {
+    customCallback: function () {
         const clearEl = this.$shadowRoot.querySelector('#clear')
         clearEl.addEventListener('click', Database.clearData)
 
@@ -547,8 +547,14 @@ window.customElements.define('task-card', TaskCard)
 window.customElements.define('app-h2', H2)
 
 const hello = new Loon('app-hello', {
+    style: `h1 { text-align: center; }`,
+    struc: `
+        <input data-input="title" />
+        <h1>{{ title }}</h1>
+    `,
     data: {
         title: '标题',
     },
-    struc: `<input data-value="title"></input>`,
 })
+
+// console.log((hello.data.title))
