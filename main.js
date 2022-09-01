@@ -346,7 +346,7 @@ new Loon('track-ring', {
         })(this)
     },
     attributeChangedCallback: function () {
-        const ringEl = this.$shadowRoot.querySelector('#ring')
+        const ringEl = this.$shadow.querySelector('#ring')
         const r = ringEl.getAttribute('r')
         const circleLength = Math.floor(2 * Math.PI * r)
 
@@ -374,7 +374,7 @@ new Loon('task-list', {
             array.push(`<task-card data-key="${key}">hello</task-card>`)
         }
 
-        this.$shadowRoot.innerHTML += array.join('')
+        this.$shadow.innerHTML += array.join('')
     },
 })
 
@@ -446,10 +446,10 @@ new Loon('add-card', {
         </form>
     `,
     customCallback: function () {
-        const iconEl = this.$shadowRoot.querySelector('#task-icon')
-        const titleEl = this.$shadowRoot.querySelector('#task-title')
-        const descriptEl = this.$shadowRoot.querySelector('#task-descript')
-        const submitEl = this.$shadowRoot.querySelector('button')
+        const iconEl = this.$shadow.querySelector('#task-icon')
+        const titleEl = this.$shadow.querySelector('#task-title')
+        const descriptEl = this.$shadow.querySelector('#task-descript')
+        const submitEl = this.$shadow.querySelector('button')
 
         submitEl.addEventListener('click', (event) => {
             event.preventDefault()
@@ -503,13 +503,13 @@ new Loon('develop-card', {
             </label>
     `,
     customCallback: function () {
-        const clearEl = this.$shadowRoot.querySelector('#clear')
+        const clearEl = this.$shadow.querySelector('#clear')
         clearEl.addEventListener('click', Database.clearData)
 
-        const saveEl = this.$shadowRoot.querySelector('#save')
+        const saveEl = this.$shadow.querySelector('#save')
         saveEl.addEventListener('click', Database.exportDataFile)
 
-        const fileEl = this.$shadowRoot.querySelector('#file')
+        const fileEl = this.$shadow.querySelector('#file')
         fileEl.addEventListener('change', fileHandle)
 
         function fileHandle() {
