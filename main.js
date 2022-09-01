@@ -286,7 +286,7 @@ const header = new Loon('app-header', {
 
 new Loon('extract-card', {
     struc: `
-        <app-h2 data-content="{{ title }}"></app-h2>
+        <app-h2 data-content="总览"></app-h2>
 
         <div class="card">
             <div>
@@ -365,7 +365,6 @@ new Loon('extract-card', {
         currentCount: 80,
         totalCount: 120,
         tasks: 4,
-        title: '总览',
     },
     customCallback: function () {
         const ringEl = this.$shadowRoot.querySelector('#ring')
@@ -447,7 +446,7 @@ new Loon('add-card', {
         }
     `,
     struc: `
-        <app-h2 data-content="{{ title }}"></app-h2>
+        <app-h2 data-content="添加新任务"></app-h2>
         
         <form action="./test" method="post">
             <div class="row">
@@ -468,9 +467,6 @@ new Loon('add-card', {
             <button type="submit">保存</button>
         </form>
     `,
-    data: {
-        title: '添加新任务',
-    },
     customCallback: function () {
         const iconEl = this.$shadowRoot.querySelector('#task-icon')
         const titleEl = this.$shadowRoot.querySelector('#task-title')
@@ -508,9 +504,12 @@ new Loon('develop-card', {
             color: var(--font-color);
         }
 
-        h3 {
+        h2 {
+            font-size: 1rem;
             margin: 0 0 .5rem 0;
             color: var(--font-color);
+            font-style: italic;
+            font-family: serif;
         }
 
         button {
@@ -519,7 +518,7 @@ new Loon('develop-card', {
         }
     `,
     struc: `
-            <h3>⚠️ Developer Setting</h3>
+            <h2>⚠️ Developer Setting</h3>
             <button id="save">保存数据库到本地</button>
             <button id="clear">清除页面储存</button>
             <label>
@@ -550,7 +549,7 @@ const hello = new Loon('app-hello', {
     style: `h1 { text-align: center; }`,
     struc: `
         <input data-input="title" />
-        <h1>{{ title }}</h1>
+        <h1>title：{{ title }}</h1>
     `,
     data: {
         title: '标题',

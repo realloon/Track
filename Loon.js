@@ -8,9 +8,9 @@ export default class Loon {
                   set: (target, property, value) => {
                       if (Reflect.get(target, property) !== value) {
                           Reflect.set(target, property, value)
-                          // FIXME: 不应该每次 set 数据都触发重绘 || <slot>
-                          that.$shadowRoot.innerHTML = this.style + this.struc
-                          console.log('触发了 innerHTML 重绘')
+
+                          this.#redrawTextNode()
+                          console.log('innerHTML refreach')
                       }
 
                       return true
@@ -23,7 +23,6 @@ export default class Loon {
             constructor() {
                 super()
                 this.shadow = this.attachShadow({ mode: 'closed' })
-                // 缓存结果
                 this.shadow.innerHTML = that.style + that.struc
 
                 this.bindAttrHandle()
@@ -116,15 +115,27 @@ export default class Loon {
     get struc() {
         let struc = this.__struc
 
-        const isTemplate = /{{\s\w+\s}}/.test(struc)
+        const isTemplate = /{{ \w+ }}/.test(struc)
 
         if (isTemplate) {
-            struc.replace(/{{\s\w+\s}}/g, (match) => {
-                const key = match.replace(/({{ | }})/g, '')
-                struc = struc.replace(match, this.data[key])
+            struc = struc.replace(/<.*{{ \w+ }}.*>/g, (match) => {
+                return match.replace(/{{ \w+ }}/g, (match) => {
+                    const key = match.replace(/({{ | }})/g, '')
+                    return `<span data-loon-content="${key}">${this.data[key]}</span>`
+                })
             })
         }
 
         return struc
+    }
+
+    #redrawTextNode() {
+        const textNode = this.$shadowRoot.querySelectorAll(
+            '[data-loon-content]'
+        )
+        textNode.forEach((el) => {
+            const key = el.dataset.loonContent
+            el.textContent = this.data[key]
+        })
     }
 }
