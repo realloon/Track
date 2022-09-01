@@ -3,20 +3,26 @@ export default class Loon {
         this.__style = parms.style ? `<style>${parms.style}</style>` : ''
         this.__struc = parms.struc ? parms.struc : ''
 
-        this.data = parms.data
-            ? new Proxy(parms.data, {
-                  set: (target, property, value) => {
-                      if (Reflect.get(target, property) !== value) {
-                          Reflect.set(target, property, value)
+        // FIXME: 还有 dataset
+        this.data = new Proxy(parms.data ? parms.data : {}, {
+            set: (target, property, value) => {
+                if (Reflect.get(target, property) !== value) {
+                    Reflect.set(target, property, value)
 
-                          this.#redrawTextNode()
-                          console.log('innerHTML refreach')
-                      }
+                    this.#redrawTextNode()
+                    // update dataset
+                    // console.log(property)
+                    this.$HTMLElement.dataset[property] = value
+                }
 
-                      return true
-                  },
-              })
-            : {}
+                return true
+            },
+        })
+
+        this.observe = parms.observe || []
+
+        // Bind callback function
+        this.attributeChangedCallback = parms.attributeChangedCallback
 
         const that = this
         class newElemnt extends HTMLElement {
@@ -33,7 +39,7 @@ export default class Loon {
             }
 
             static get observedAttributes() {
-                return []
+                return that.observe.map((e) => 'data-' + e)
             }
 
             // 添加到 DOM 中时触发
@@ -41,19 +47,18 @@ export default class Loon {
 
             attributeChangedCallback(target, oldValue, newValue) {
                 // 绑定操作书写处
-                console.log('done')
+                that.observe.forEach((key) => {
+                    // console.log(`${that.data[key]} -> ${this.dataset[key]}`)
+
+                    that.data[key] = this.dataset[key]
+                })
+
+                // that.xxxCallback
+                if (that.attributeChangedCallback)
+                    that.attributeChangedCallback.call(that)
             }
 
             bindAttrHandle() {
-                // Doing
-                const textNode = this.shadow.querySelectorAll('[-text]')
-                if (textNode.length) {
-                    textNode.forEach((el) => {
-                        const value = that.data[el.getAttribute('-text')]
-                        el.textContent = value
-                    })
-                }
-
                 // Doing input
                 const inputNode = this.shadow.querySelectorAll('[data-input]')
                 if (inputNode.length) {
@@ -102,10 +107,8 @@ export default class Loon {
 
         customElements.define(tagName, newElemnt)
 
-        // Callback
-        if (parms.customCallback) {
-            parms.customCallback.call(this)
-        }
+        // Custom End callback
+        if (parms.customCallback) parms.customCallback.call(this)
     }
 
     get style() {
@@ -135,7 +138,10 @@ export default class Loon {
         )
         textNode.forEach((el) => {
             const key = el.dataset.loonContent
-            el.textContent = this.data[key]
+            if (el.textContent !== this.data[key]) {
+                el.textContent = this.data[key]
+                // console.log('redrawTextNode')
+            }
         })
     }
 }

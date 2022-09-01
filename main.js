@@ -1,6 +1,5 @@
 import Loon from './Loon.js'
 
-// FIXME: Proxy 存在严重问题
 export class Database {
     //FIXME: 初始化时应及时处理
     static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
@@ -196,57 +195,22 @@ class TaskCard extends HTMLElement {
     }
 }
 
-// 实现了双向绑定
-class H2 extends HTMLElement {
-    constructor() {
-        super()
-        this.shadow = this.attachShadow({ mode: 'closed' })
+new Loon('track-h2', {
+    style: `
+        h2 {
+            font-size: 1.125rem;
+            line-height: 1em;
+            color: var(--font-color);
+            margin: 1.5rem 0 -0.5rem 1rem;
+        }
+    `,
+    struc: `
+        <h2>{{ title }}</h2>
+    `,
+    observe: ['title'],
+})
 
-        this.render()
-
-        const that = this
-        this._data = new Proxy(this.dataset, {
-            set(target, property, value) {
-                if (that.dataset[property] !== value) {
-                    Reflect.set(target, property, value)
-                    // 绑定操作书写处
-                    that.updataTitle(value)
-                }
-                return true
-            },
-        })
-    }
-
-    static get observedAttributes() {
-        return ['data-content']
-    }
-
-    attributeChangedCallback(target, oldValue, newValue) {
-        // 绑定操作书写处
-        this.updataTitle(newValue)
-    }
-
-    render() {
-        this.shadow.innerHTML = `
-            <style>
-                h2 {
-                    font-size: 1.125rem;
-                    line-height: 1em;
-                    color: var(--font-color);
-                    margin: 1.5rem 0 -0.5rem 1rem;
-                }
-            </style>
-            <h2 id="title"></h2>
-        `
-    }
-
-    updataTitle(title) {
-        const titleNode = this.shadow.getElementById('title')
-        titleNode.textContent = title
-    }
-}
-
-const header = new Loon('app-header', {
+new Loon('track-header', {
     struc: `
         <header>
             <h1>{{ title }}</h1>
@@ -286,7 +250,7 @@ const header = new Loon('app-header', {
 
 new Loon('extract-card', {
     struc: `
-        <app-h2 data-content="总览"></app-h2>
+        <track-h2 data-title="总览"></track-h2>
 
         <div class="card">
             <div>
@@ -296,27 +260,7 @@ new Loon('extract-card', {
                 <p>{{ tasks }}</p>
             </div>
 
-            <svg xmlns="http://www.w3.org/200/svg" height="100" width="100">
-                <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#f4433650"
-                    stroke-width="16"
-                    stroke-linecap="round"
-                />
-                <circle
-                    id="ring"
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="var(--theme-color)"
-                    stroke-width="16"
-                    stroke-dasharray="0,10000"
-                />
-            </svg>
+            <track-ring data-rate="80"></track-ring>
         </div>
     `,
     style: `
@@ -351,12 +295,6 @@ new Loon('extract-card', {
             color: var(--gray-font-color);
         }
 
-        #ring {
-            transform-origin: center;
-            transform: rotate(-90deg);
-            transition: stroke-dasharray 0.3s ease-in;
-        }
-
         .theme {
             color: var(--theme-color);
         }
@@ -366,21 +304,58 @@ new Loon('extract-card', {
         totalCount: 120,
         tasks: 4,
     },
-    customCallback: function () {
-        const ringEl = this.$shadowRoot.querySelector('#ring')
+})
 
+new Loon('track-ring', {
+    struc: `
+        <svg xmlns="http://www.w3.org/200/svg" height="100" width="100">
+            <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="#f4433650"
+                stroke-width="16"
+                stroke-linecap="round"
+            />
+            <circle
+                id="ring"
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="var(--theme-color)"
+                stroke-width="16"
+                stroke-dasharray="0,10000"
+            />
+        </svg>
+    `,
+    style: `
+        #ring {
+            transform-origin: center;
+            transform: rotate(-90deg);
+            transition: stroke-dasharray .5s ease-out;
+        }
+    `,
+    observe: ['rate'],
+    customCallback: function () {
+        ;(function initRingRate(instantiat) {
+            const rateCache = instantiat.data.rate
+            instantiat.data.rate = 0
+            setTimeout(() => (instantiat.data.rate = rateCache))
+        })(this)
+    },
+    attributeChangedCallback: function () {
+        const ringEl = this.$shadowRoot.querySelector('#ring')
         const r = ringEl.getAttribute('r')
         const circleLength = Math.floor(2 * Math.PI * r)
 
-        // TODO
-        function rotateCircle(value = 0) {
-            value = (circleLength * value) / 100
-
+        function rotateCircle(rate = 0) {
+            const value = (circleLength * rate) / 100
             ringEl.setAttribute('stroke-dasharray', `${value},${circleLength}`)
         }
 
-        const value = (this.data.currentCount / this.data.totalCount) * 100
-        rotateCircle(value)
+        rotateCircle(this.data.rate)
     },
 })
 
@@ -389,14 +364,17 @@ new Loon('task-list', {
         title: '项目',
         list: Database.data,
     },
+    struc: `
+        <track-h2 data-title="项目"></track-h2>
+    `,
     customCallback: function () {
         const array = []
-        array.push(`<app-h2 data-content="${this.data.title}"></app-h2>`)
 
         for (const key of Object.keys(this.data.list)) {
             array.push(`<task-card data-key="${key}">hello</task-card>`)
         }
-        this.$shadowRoot.innerHTML = array.join('')
+
+        this.$shadowRoot.innerHTML += array.join('')
     },
 })
 
@@ -446,7 +424,7 @@ new Loon('add-card', {
         }
     `,
     struc: `
-        <app-h2 data-content="添加新任务"></app-h2>
+        <track-h2 data-title="添加新任务"></track-h2>
         
         <form action="./test" method="post">
             <div class="row">
@@ -494,8 +472,8 @@ new Loon('develop-card', {
             display: flex;
             flex-direction: column;
             background: var(--controls-ground);
-            color: var(--font-color)
-            margin: 16px;
+            color: var(--font-color);
+            margin-top: 32px;
             padding: 16px;
             font-size: 14px;
         }
@@ -508,7 +486,6 @@ new Loon('develop-card', {
             font-size: 1rem;
             margin: 0 0 .5rem 0;
             color: var(--font-color);
-            font-style: italic;
             font-family: serif;
         }
 
@@ -543,17 +520,3 @@ new Loon('develop-card', {
 })
 
 window.customElements.define('task-card', TaskCard)
-window.customElements.define('app-h2', H2)
-
-const hello = new Loon('app-hello', {
-    style: `h1 { text-align: center; }`,
-    struc: `
-        <input data-input="title" />
-        <h1>title：{{ title }}</h1>
-    `,
-    data: {
-        title: '标题',
-    },
-})
-
-// console.log((hello.data.title))
