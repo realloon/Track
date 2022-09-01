@@ -2,15 +2,16 @@ export default class Loon {
     #style
     #struc
     #observe
+    #synctexs = []
 
     // 重绘模板文本
     #redrawTextNode() {
-        const textNode = this.$shadow.querySelectorAll('[data-loon-content]')
-        textNode.forEach((el) => {
-            const key = el.dataset.loonContent
+        const synctexElements = this.$shadow.querySelectorAll('[data-synctex]')
+        synctexElements.forEach((el) => {
+            const key = el.dataset.synctex
             if (el.textContent !== this.data[key]) {
                 el.textContent = this.data[key]
-                // console.log('redrawTextNode')
+                console.log('redraw text node had Done.')
             }
         })
     }
@@ -22,16 +23,17 @@ export default class Loon {
         this.data = new Proxy(parms.data ? parms.data : {}, {
             // FIXME: 还有 dataset
             set: (target, property, value) => {
-                console.log('Set!!!')
-                if (Reflect.get(target, property) !== value) {
+                if (target.property !== value) {
                     Reflect.set(target, property, value)
 
-                    // this.#redrawTextNode()
+                    // 剔除没有对应模板字段的属性
+                    if (this.#synctexs.includes(property)) {
+                        this.#redrawTextNode()
+                    }
 
                     // update dataset
                     // this.$element.dataset[property] = value
                 }
-
                 return true
             },
         })
@@ -145,6 +147,10 @@ export default class Loon {
             struc = struc.replace(regex, (match) => {
                 return match.replace(regex, (match) => {
                     const key = match.replace(/({{ | }})/g, '')
+
+                    // 增量保存需要更新的同步文本的 key
+                    this.#synctexs.push(key)
+
                     // 添加 "data-synctex" 同步标记。并初始化节点文本值
                     return `<span data-synctex="${key}">${this.data[key]}</span>`
                 })

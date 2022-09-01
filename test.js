@@ -5,6 +5,7 @@ const example = new Loon('my-h1', {
     struc: `<h1>你好：{{ name }}</h1>`,
     data: {
         name: 'Loon',
+        // no: 'xxx'
     },
 })
 
