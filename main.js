@@ -1,6 +1,6 @@
 import Loon from './Loon.js'
 
-export class Database {
+class Database {
     //FIXME: 初始化时应及时处理
     static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
 
@@ -338,24 +338,30 @@ new Loon('track-ring', {
         }
     `,
     observe: ['rate'],
-    customCallback: function () {
-        ;(function initRingRate(instantiat) {
-            const rateCache = instantiat.data.rate
-            instantiat.data.rate = 0
-            setTimeout(() => (instantiat.data.rate = rateCache))
-        })(this)
-    },
-    attributeChangedCallback: function () {
-        const ringEl = this.$shadow.querySelector('#ring')
-        const r = ringEl.getAttribute('r')
-        const circleLength = Math.floor(2 * Math.PI * r)
+    callback: {
+        customCallback: function () {
+            const rateCache = this.data.rate
+            this.data.rate = 0
+            setTimeout(() => (this.data.rate = rateCache))
 
-        function rotateCircle(rate = 0) {
-            const value = (circleLength * rate) / 100
-            ringEl.setAttribute('stroke-dasharray', `${value},${circleLength}`)
-        }
+            console.log('done')
+        },
 
-        rotateCircle(this.data.rate)
+        attributeChangedCallback: function () {
+            const ringEl = this.$shadow.querySelector('#ring')
+            const r = ringEl.getAttribute('r')
+            const circleLength = Math.floor(2 * Math.PI * r)
+
+            function rotateCircle(rate = 0) {
+                const value = (circleLength * rate) / 100
+                ringEl.setAttribute(
+                    'stroke-dasharray',
+                    `${value},${circleLength}`
+                )
+            }
+
+            rotateCircle(this.data.rate)
+        },
     },
 })
 
@@ -367,14 +373,16 @@ new Loon('task-list', {
     struc: `
         <track-h2 data-title="项目"></track-h2>
     `,
-    customCallback: function () {
-        const array = []
+    callback: {
+        customCallback: function () {
+            const array = []
 
-        for (const key of Object.keys(this.data.list)) {
-            array.push(`<task-card data-key="${key}">hello</task-card>`)
-        }
+            for (const key of Object.keys(this.data.list)) {
+                array.push(`<task-card data-key="${key}">hello</task-card>`)
+            }
 
-        this.$shadow.innerHTML += array.join('')
+            this.$shadow.innerHTML += array.join('')
+        },
     },
 })
 
@@ -445,24 +453,26 @@ new Loon('add-card', {
             <button type="submit">保存</button>
         </form>
     `,
-    customCallback: function () {
-        const iconEl = this.$shadow.querySelector('#task-icon')
-        const titleEl = this.$shadow.querySelector('#task-title')
-        const descriptEl = this.$shadow.querySelector('#task-descript')
-        const submitEl = this.$shadow.querySelector('button')
+    callback: {
+        customCallback: function () {
+            const iconEl = this.$shadow.querySelector('#task-icon')
+            const titleEl = this.$shadow.querySelector('#task-title')
+            const descriptEl = this.$shadow.querySelector('#task-descript')
+            const submitEl = this.$shadow.querySelector('button')
 
-        submitEl.addEventListener('click', (event) => {
-            event.preventDefault()
-            if (iconEl.value !== '' || titleEl.value !== '') {
-                Database.addTaskItems(
-                    iconEl.value,
-                    titleEl.value,
-                    descriptEl.value
-                )
-            } else {
-                console.log('数据为空')
-            }
-        })
+            submitEl.addEventListener('click', (event) => {
+                event.preventDefault()
+                if (iconEl.value !== '' || titleEl.value !== '') {
+                    Database.addTaskItems(
+                        iconEl.value,
+                        titleEl.value,
+                        descriptEl.value
+                    )
+                } else {
+                    console.log('数据为空')
+                }
+            })
+        },
     },
 })
 
@@ -502,20 +512,22 @@ new Loon('develop-card', {
                 <input type="file" id="file" />
             </label>
     `,
-    customCallback: function () {
-        const clearEl = this.$shadow.querySelector('#clear')
-        clearEl.addEventListener('click', Database.clearData)
+    callback: {
+        customCallback: function () {
+            const clearEl = this.$shadow.querySelector('#clear')
+            clearEl.addEventListener('click', Database.clearData)
 
-        const saveEl = this.$shadow.querySelector('#save')
-        saveEl.addEventListener('click', Database.exportDataFile)
+            const saveEl = this.$shadow.querySelector('#save')
+            saveEl.addEventListener('click', Database.exportDataFile)
 
-        const fileEl = this.$shadow.querySelector('#file')
-        fileEl.addEventListener('change', fileHandle)
+            const fileEl = this.$shadow.querySelector('#file')
+            fileEl.addEventListener('change', fileHandle)
 
-        function fileHandle() {
-            const file = this.files[0]
-            Database.importDataFile(file)
-        }
+            function fileHandle() {
+                const file = this.files[0]
+                Database.importDataFile(file)
+            }
+        },
     },
 })
 

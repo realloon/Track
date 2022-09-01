@@ -3,23 +3,31 @@ export default class Loon {
     #struc
     #observe
     #synctexs = []
+    #callback
 
     // 重绘模板文本
-    #redrawTextNode() {
+    #redrawTextNode(key) {
         const synctexElements = this.$shadow.querySelectorAll('[data-synctex]')
         synctexElements.forEach((el) => {
             const key = el.dataset.synctex
             if (el.textContent !== this.data[key]) {
                 el.textContent = this.data[key]
-                console.log('redraw text node had Done.')
+                console.log(
+                    '@Loon: Redraw text node had Done, content:',
+                    this.data[key]
+                )
             }
         })
+
+        // slot 方案
+        // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
+        // slot.forEach((e) => {
+        //     e.textContent = this.data[key]
+        // })
+        // slot.textContent = this.data[key]
     }
 
     constructor(tagName, parms = {}) {
-        this.#struc = parms.struc || ''
-        this.#style = parms.style || ''
-        this.#observe = parms.observe || []
         this.data = new Proxy(parms.data ? parms.data : {}, {
             // FIXME: 还有 dataset
             set: (target, property, value) => {
@@ -28,7 +36,7 @@ export default class Loon {
 
                     // 剔除没有对应模板字段的属性
                     if (this.#synctexs.includes(property)) {
-                        this.#redrawTextNode()
+                        this.#redrawTextNode(property)
                     }
 
                     // update dataset
@@ -38,22 +46,62 @@ export default class Loon {
             },
         })
 
+        this.#struc = (() => {
+            if (!parms.struc) return ''
+
+            let struc = parms.struc
+            const regex = /{{ \w+ }}/g
+
+            const isTemplate = regex.test(struc)
+
+            if (isTemplate) {
+                struc = struc.replace(regex, (match) => {
+                    return match.replace(regex, (match) => {
+                        const key = match.replace(/({{ | }})/g, '')
+
+                        // 增量保存需要更新的同步文本的 key
+                        this.#synctexs.push(key)
+
+                        // 添加 "data-synctex" 同步标记。并初始化节点文本值
+                        return `<span data-synctex="${key}">${this.data[key]}</span>`
+
+                        // slot 方案
+                        // return `<slot name=${key}></slot>`
+                    })
+                })
+            }
+
+            // console.log('@Loon get struc result:', struc)
+            return struc
+        })()
+
+        this.#style = parms.style ? '<style>' + parms.style + '</style>' : ''
+
+        this.#observe = parms.observe || []
+
         // Bind callback function
-        this.attributeChangedCallback = parms.attributeChangedCallback
+        this.#callback = parms.callback
 
         const that = this
         class customElement extends HTMLElement {
             constructor() {
                 super()
                 this.shadow = this.attachShadow({ mode: 'closed' })
-                this.shadow.innerHTML = that.style + that.struc
+                this.shadow.innerHTML = that.#style + that.#struc
 
                 // 绑定交互元素的监听事件
                 // this.bindAttrHandle()
 
-                // 暴露内部属性
+                // 暴露真实 dom 到 Loon 对象上
                 that.$element = this
                 that.$shadow = this.shadow
+
+                Object.keys(that.data).forEach((key) => {
+                    const span = document.createElement('span')
+                    span.textContent = that.data[key]
+                    span.setAttribute('slot', key)
+                    this.appendChild(span)
+                })
             }
 
             static get observedAttributes() {
@@ -61,103 +109,74 @@ export default class Loon {
             }
 
             // 添加到 DOM 中时触发
-            connectedCallback() {}
+            connectedCallback() {
+                if (that.#callback && that.#callback.connectedCallback)
+                    that.#callback.connectedCallback.call(that)
+            }
 
             attributeChangedCallback(target, oldValue, newValue) {
-                // 绑定操作书写处
                 that.#observe.forEach((key) => {
-                    // console.log(`${that.data[key]} -> ${this.dataset[key]}`)
-
+                    // 将 dataset 的值同步到 data 代理对象
                     that.data[key] = this.dataset[key]
                 })
 
                 // that.xxxCallback
-                if (that.attributeChangedCallback)
-                    that.attributeChangedCallback.call(that)
+                if (that.#callback && that.#callback.attributeChangedCallback)
+                    that.#callback.attributeChangedCallback.call(that)
             }
 
-            bindAttrHandle() {
-                // Doing input
-                const inputNode = this.shadow.querySelectorAll('[data-input]')
-                if (inputNode.length) {
-                    inputNode.forEach((el) => {
-                        const key = el.dataset.input
+            // 绑定交互元素的监听事件
+            // bindAttrHandle() {
+            //     // Doing input
+            //     const inputNode = this.shadow.querySelectorAll('[data-input]')
+            //     if (inputNode.length) {
+            //         inputNode.forEach((el) => {
+            //             const key = el.dataset.input
 
-                        const sync = new Proxy(el.dataset, {
-                            set: (target, property, value) => {
-                                Reflect.set(target, property, value)
-                                // Doing
-                                el.value = that.data[key]
-                                return true
-                            },
-                        })
+            //             const sync = new Proxy(el.dataset, {
+            //                 set: (target, property, value) => {
+            //                     Reflect.set(target, property, value)
+            //                     // Doing
+            //                     el.value = that.data[key]
+            //                     return true
+            //                 },
+            //             })
 
-                        sync.input = that.data[key]
+            //             sync.input = that.data[key]
 
-                        el.addEventListener('input', (e) => {
-                            that.data[key] = e.target.value
-                        })
-                    })
-                }
+            //             el.addEventListener('input', (e) => {
+            //                 that.data[key] = e.target.value
+            //             })
+            //         })
+            //     }
 
-                // const inputLazyNode =
-                //     this.shadow.querySelectorAll('[data-input-lazy]')
-                // if (inputLazyNode.length) {
-                //     inputLazyNode.forEach((el) => {
-                //         const sync = new Proxy(el.dataset, {
-                //             set: (target, property, value) => {
-                //                 Reflect.set(target, property, value)
-                //                 // Doing
-                //                 el.value = value
-                //                 return true
-                //             },
-                //         })
+            //     // const inputLazyNode =
+            //     //     this.shadow.querySelectorAll('[data-input-lazy]')
+            //     // if (inputLazyNode.length) {
+            //     //     inputLazyNode.forEach((el) => {
+            //     //         const sync = new Proxy(el.dataset, {
+            //     //             set: (target, property, value) => {
+            //     //                 Reflect.set(target, property, value)
+            //     //                 // Doing
+            //     //                 el.value = value
+            //     //                 return true
+            //     //             },
+            //     //         })
 
-                //         el.addEventListener('change', (e) => {
-                //             sync.valueLazy = e.target.value
-                //         })
+            //     //         el.addEventListener('change', (e) => {
+            //     //             sync.valueLazy = e.target.value
+            //     //         })
 
-                //         sync.valueLazy = that.data[el.dataset.valueLazy]
-                //     })
-                // }
-            }
+            //     //         sync.valueLazy = that.data[el.dataset.valueLazy]
+            //     //     })
+            //     // }
+            // }
         }
 
         customElements.define(tagName, customElement)
 
         // Custom End callback
-        if (parms.customCallback) parms.customCallback.call(this)
-    }
-
-    get style() {
-        // console.log(
-        //     '$@Loon=> get style result:',
-        //     '<style>' + this.#style + '</style>'
-        // )
-        return '<style>' + this.#style + '</style>'
-    }
-
-    get struc() {
-        const regex = /{{ \w+ }}/g
-        let struc = this.#struc
-
-        const isTemplate = regex.test(struc)
-
-        if (isTemplate) {
-            struc = struc.replace(regex, (match) => {
-                return match.replace(regex, (match) => {
-                    const key = match.replace(/({{ | }})/g, '')
-
-                    // 增量保存需要更新的同步文本的 key
-                    this.#synctexs.push(key)
-
-                    // 添加 "data-synctex" 同步标记。并初始化节点文本值
-                    return `<span data-synctex="${key}">${this.data[key]}</span>`
-                })
-            })
-        }
-
-        // console.log('$@Loon=> get struc result:', struc)
-        return struc
+        if (this.#callback && this.#callback.customCallback)
+            this.#callback.customCallback.call(this)
     }
 }
