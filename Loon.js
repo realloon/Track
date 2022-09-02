@@ -1,20 +1,28 @@
 export default class Loon {
-    #style
-    #struc
-    #observe
+    #style = ''
+    #struc = ''
+    #observe = []
     #synctexs = []
-    #callback
+    #callback = {}
+    #syncInputElements = []
 
     constructor(tagName, parms = {}) {
-        this.data = new Proxy(parms.data ? parms.data : {}, {
+        this.data = new Proxy(parms.data || {}, {
             set: (target, property, value) => {
                 if (target.property === value) return true
 
-                // 对有模板字段的属性进行重绘文本
-                if (this.#synctexs.includes(property)) {
-                    // 如果药修改的属性对应模板字段，其值转换为字符串类型
-                    Reflect.set(target, property, String(value))
+                const hasSyncTexs = this.#synctexs.includes(property)
+                const hasSyncInputs = this.#syncInputElements.length !== 0
 
+                if (hasSyncTexs || hasSyncInputs) {
+                    // 如果修改的属性对应同步字段，其值转换为字符串类型
+                    value = String(value)
+                }
+
+                Reflect.set(target, property, value)
+
+                // 对有同步字段的属性重绘 textContent 值
+                if (hasSyncTexs) {
                     const synctexElements =
                         this.$shadow.querySelectorAll('[data-synctex]')
 
@@ -27,10 +35,12 @@ export default class Loon {
                                 '@Loon: Redraw text node had Done, content:',
                                 this.data[key]
                             )
-                        }
 
-                        // FIXME: 还有 dataset
-                        // this.$element.dataset[property] = value
+                            if (this.#observe.includes(key)) {
+                                // 同步到元素 dataset 属性上
+                                this.$element.dataset[key] = value
+                            }
+                        }
 
                         // slot 方案
                         // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
@@ -38,9 +48,29 @@ export default class Loon {
                         //     e.textContent = this.data[key]
                         // })
                         // slot.textContent = this.data[key]
+
+                        // 同步 Proxy(data) 的变化到 input.value 上
                     })
-                } else {
-                    Reflect.set(target, property, value)
+                }
+
+                // 对有同步字段的属性重绘 input 值
+                if (hasSyncInputs) {
+                    this.#syncInputElements.forEach((el) => {
+                        const key = el.dataset.input
+
+                        if (!(key === property)) return
+
+                        value = String(value)
+                        if (el.value !== value) {
+                            console.log(
+                                'input value data: ',
+                                el.value,
+                                '->',
+                                value
+                            )
+                            el.value = value
+                        }
+                    })
                 }
 
                 return true
@@ -91,7 +121,7 @@ export default class Loon {
                 this.shadow.innerHTML = that.#style + that.#struc
 
                 // 绑定交互元素的监听事件
-                // this.bindAttrHandle()
+                this.#bind()
 
                 // 暴露真实 dom 到 Loon 对象上
                 that.$element = this
@@ -104,6 +134,26 @@ export default class Loon {
                 //     span.setAttribute('slot', key)
                 //     this.appendChild(span)
                 // })
+            }
+
+            #bind() {
+                const inputElements =
+                    this.shadow.querySelectorAll('[data-input]')
+
+                inputElements.forEach((el) => {
+                    const key = el.dataset.input
+
+                    // init element.value
+                    el.value = that.data[key]
+
+                    el.addEventListener('input', (e) => {
+                        // 把 input 属性的变化同步到 Proxy(data)
+                        that.data[key] = e.target.value
+                    })
+
+                    // TODO XXXXXXXXXXXXXXX
+                    that.#syncInputElements.push(el)
+                })
             }
 
             static get observedAttributes() {
@@ -122,57 +172,12 @@ export default class Loon {
                     that.data[key] = this.dataset[key]
                 })
 
-                // that.xxxCallback
+                // attributeChangedCallback
                 if (that.#callback && that.#callback.attributeChangedCallback)
                     that.#callback.attributeChangedCallback.call(that)
             }
 
             // 绑定交互元素的监听事件
-            // bindAttrHandle() {
-            //     // Doing input
-            //     const inputNode = this.shadow.querySelectorAll('[data-input]')
-            //     if (inputNode.length) {
-            //         inputNode.forEach((el) => {
-            //             const key = el.dataset.input
-
-            //             const sync = new Proxy(el.dataset, {
-            //                 set: (target, property, value) => {
-            //                     Reflect.set(target, property, value)
-            //                     // Doing
-            //                     el.value = that.data[key]
-            //                     return true
-            //                 },
-            //             })
-
-            //             sync.input = that.data[key]
-
-            //             el.addEventListener('input', (e) => {
-            //                 that.data[key] = e.target.value
-            //             })
-            //         })
-            //     }
-
-            //     // const inputLazyNode =
-            //     //     this.shadow.querySelectorAll('[data-input-lazy]')
-            //     // if (inputLazyNode.length) {
-            //     //     inputLazyNode.forEach((el) => {
-            //     //         const sync = new Proxy(el.dataset, {
-            //     //             set: (target, property, value) => {
-            //     //                 Reflect.set(target, property, value)
-            //     //                 // Doing
-            //     //                 el.value = value
-            //     //                 return true
-            //     //             },
-            //     //         })
-
-            //     //         el.addEventListener('change', (e) => {
-            //     //             sync.valueLazy = e.target.value
-            //     //         })
-
-            //     //         sync.valueLazy = that.data[el.dataset.valueLazy]
-            //     //     })
-            //     // }
-            // }
         }
 
         customElements.define(tagName, customElement)
