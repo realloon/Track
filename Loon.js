@@ -5,42 +5,42 @@ export default class Loon {
     #synctexs = []
     #callback
 
-    // 重绘模板文本
-    #redrawTextNode(key) {
-        const synctexElements = this.$shadow.querySelectorAll('[data-synctex]')
-        synctexElements.forEach((el) => {
-            const key = el.dataset.synctex
-            if (el.textContent !== this.data[key]) {
-                el.textContent = this.data[key]
-                console.log(
-                    '@Loon: Redraw text node had Done, content:',
-                    this.data[key]
-                )
-            }
-        })
-
-        // slot 方案
-        // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
-        // slot.forEach((e) => {
-        //     e.textContent = this.data[key]
-        // })
-        // slot.textContent = this.data[key]
-    }
-
     constructor(tagName, parms = {}) {
         this.data = new Proxy(parms.data ? parms.data : {}, {
-            // FIXME: 还有 dataset
             set: (target, property, value) => {
                 if (target.property !== value) {
-                    Reflect.set(target, property, value)
-
-                    // 剔除没有对应模板字段的属性
+                    // 对有模板字段的属性进行重绘文本
                     if (this.#synctexs.includes(property)) {
-                        this.#redrawTextNode(property)
-                    }
+                        // 如果药修改的属性对应模板字段，其值转换为字符串类型
+                        Reflect.set(target, property, String(value))
 
-                    // update dataset
-                    // this.$element.dataset[property] = value
+                        const synctexElements =
+                            this.$shadow.querySelectorAll('[data-synctex]')
+
+                        synctexElements.forEach((el) => {
+                            const key = el.dataset.synctex
+
+                            if (el.textContent !== this.data[key]) {
+                                el.textContent = this.data[key]
+                                console.log(
+                                    '@Loon: Redraw text node had Done, content:',
+                                    this.data[key]
+                                )
+                            }
+
+                            // FIXME: 还有 dataset
+                            // this.$element.dataset[property] = value
+
+                            // slot 方案
+                            // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
+                            // slot.forEach((e) => {
+                            //     e.textContent = this.data[key]
+                            // })
+                            // slot.textContent = this.data[key]
+                        })
+                    } else {
+                        Reflect.set(target, property, value)
+                    }
                 }
                 return true
             },
@@ -50,13 +50,13 @@ export default class Loon {
             if (!parms.struc) return ''
 
             let struc = parms.struc
-            const regex = /{{ \w+ }}/g
 
-            const isTemplate = regex.test(struc)
+            const templatRegex = /{{ \w+ }}/g
+            const isTemplate = templatRegex.test(struc)
 
             if (isTemplate) {
-                struc = struc.replace(regex, (match) => {
-                    return match.replace(regex, (match) => {
+                struc = struc.replace(templatRegex, (match) => {
+                    return match.replace(templatRegex, (match) => {
                         const key = match.replace(/({{ | }})/g, '')
 
                         // 增量保存需要更新的同步文本的 key
@@ -96,12 +96,13 @@ export default class Loon {
                 that.$element = this
                 that.$shadow = this.shadow
 
-                Object.keys(that.data).forEach((key) => {
-                    const span = document.createElement('span')
-                    span.textContent = that.data[key]
-                    span.setAttribute('slot', key)
-                    this.appendChild(span)
-                })
+                // slot 方案 init
+                // Object.keys(that.data).forEach((key) => {
+                //     const span = document.createElement('span')
+                //     span.textContent = that.data[key]
+                //     span.setAttribute('slot', key)
+                //     this.appendChild(span)
+                // })
             }
 
             static get observedAttributes() {
