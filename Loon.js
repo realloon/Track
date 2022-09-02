@@ -8,40 +8,41 @@ export default class Loon {
     constructor(tagName, parms = {}) {
         this.data = new Proxy(parms.data ? parms.data : {}, {
             set: (target, property, value) => {
-                if (target.property !== value) {
-                    // 对有模板字段的属性进行重绘文本
-                    if (this.#synctexs.includes(property)) {
-                        // 如果药修改的属性对应模板字段，其值转换为字符串类型
-                        Reflect.set(target, property, String(value))
+                if (target.property === value) return true
 
-                        const synctexElements =
-                            this.$shadow.querySelectorAll('[data-synctex]')
+                // 对有模板字段的属性进行重绘文本
+                if (this.#synctexs.includes(property)) {
+                    // 如果药修改的属性对应模板字段，其值转换为字符串类型
+                    Reflect.set(target, property, String(value))
 
-                        synctexElements.forEach((el) => {
-                            const key = el.dataset.synctex
+                    const synctexElements =
+                        this.$shadow.querySelectorAll('[data-synctex]')
 
-                            if (el.textContent !== this.data[key]) {
-                                el.textContent = this.data[key]
-                                console.log(
-                                    '@Loon: Redraw text node had Done, content:',
-                                    this.data[key]
-                                )
-                            }
+                    synctexElements.forEach((el) => {
+                        const key = el.dataset.synctex
 
-                            // FIXME: 还有 dataset
-                            // this.$element.dataset[property] = value
+                        if (el.textContent !== this.data[key]) {
+                            el.textContent = this.data[key]
+                            console.log(
+                                '@Loon: Redraw text node had Done, content:',
+                                this.data[key]
+                            )
+                        }
 
-                            // slot 方案
-                            // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
-                            // slot.forEach((e) => {
-                            //     e.textContent = this.data[key]
-                            // })
-                            // slot.textContent = this.data[key]
-                        })
-                    } else {
-                        Reflect.set(target, property, value)
-                    }
+                        // FIXME: 还有 dataset
+                        // this.$element.dataset[property] = value
+
+                        // slot 方案
+                        // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
+                        // slot.forEach((e) => {
+                        //     e.textContent = this.data[key]
+                        // })
+                        // slot.textContent = this.data[key]
+                    })
+                } else {
+                    Reflect.set(target, property, value)
                 }
+
                 return true
             },
         })
