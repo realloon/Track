@@ -226,8 +226,9 @@ new Loon('track-ring', {
     callback: {
         customCallback: function () {
             const rateCache = this.data.rate
-            this.data.rate = 0
-            setTimeout(() => (this.data.rate = rateCache))
+
+            this.$element.dataset.rate = 0
+            setTimeout(() => (this.$element.dataset.rate = rateCache))
         },
 
         attributeChangedCallback: function () {
@@ -235,7 +236,7 @@ new Loon('track-ring', {
             const r = ringEl.getAttribute('r')
             const circleLength = Math.floor(2 * Math.PI * r)
 
-            function rotateCircle(rate = 0) {
+            function rotateCircle(rate) {
                 const value = (circleLength * rate) / 100
                 ringEl.setAttribute(
                     'stroke-dasharray',
