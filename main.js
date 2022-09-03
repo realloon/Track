@@ -60,19 +60,19 @@ class Database {
 
     static exportDataFile() {
         ;(async () => {
-            const downloadFile = (await import('./downloadFile.js')).default
+            const downloadFile = (await import('./downloadFile.js'))
+                .downloadFile
+
             downloadFile(Database.data)
         })()
     }
 
     static importDataFile(file) {
-        const reader = new FileReader()
-        reader.readAsText(file)
+        ;(async () => {
+            const loadFile = (await import('./downloadFile.js')).loadFile
 
-        reader.onload = function () {
-            const obj = JSON.parse(this.result)
-            Database.data = obj
-        }
+            this.data = await loadFile(file)
+        })()
     }
 
     static clearData() {

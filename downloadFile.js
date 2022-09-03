@@ -1,5 +1,5 @@
 // 将传入对象以 json 格式储存
-export default function downloadFile(data) {
+function downloadFile(data) {
     if (!data) return console.error("Don't have data!")
 
     const element = document.createElement('a')
@@ -15,3 +15,17 @@ export default function downloadFile(data) {
     element.click()
     document.body.removeChild(element)
 }
+
+// 将传入 json 文件读取为对象
+function loadFile(file) {
+    const reader = new FileReader()
+    reader.readAsText(file)
+
+    return new Promise((resolve, reject) => {
+        reader.onload = function () {
+            resolve(JSON.parse(this.result))
+        }
+    })
+}
+
+export { downloadFile, loadFile }
