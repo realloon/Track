@@ -1,8 +1,8 @@
 export default class Loon {
     #style = ''
     #struc = ''
-    #observe = []
-    #synctexs = []
+    #observe = new Set()
+    #synctexs = new Set()
     #callback = {}
     #syncInputElements = []
 
@@ -11,7 +11,7 @@ export default class Loon {
             set: (target, property, value) => {
                 if (target.property === value) return true
 
-                const hasSyncTexs = this.#synctexs.includes(property)
+                const hasSyncTexs = this.#synctexs.has(property)
                 const hasSyncInputs = this.#syncInputElements.length !== 0
 
                 if (hasSyncTexs || hasSyncInputs) {
@@ -28,19 +28,25 @@ export default class Loon {
 
                     synctexElements.forEach((el) => {
                         const key = el.dataset.synctex
+                        if (
+                            key !== property ||
+                            el.textContent === this.data[key]
+                        )
+                            return
 
-                        if (el.textContent !== this.data[key]) {
-                            el.textContent = this.data[key]
-                            console.log(
-                                '@Loon: Redraw text node had Done, content:',
-                                this.data[key]
-                            )
+                        // if (el.textContent !== this.data[key]) {
+                        console.log(
+                            '@Loon: Redraw text node had Done:',
+                            `${el.textContent} -> ${this.data[key]}`
+                        )
+                        el.textContent = this.data[key]
 
-                            if (this.#observe.includes(key)) {
-                                // 同步到元素 dataset 属性上
-                                this.$element.dataset[key] = value
-                            }
-                        }
+                        // if (this.#observe.includes(key)) {
+                        //     console.log('绑定 dataset')
+                        //     // 同步到元素 dataset 属性上
+                        //     this.$element.dataset[key] = value
+                        // }
+                        // }
 
                         // slot 方案
                         // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
@@ -48,12 +54,10 @@ export default class Loon {
                         //     e.textContent = this.data[key]
                         // })
                         // slot.textContent = this.data[key]
-
-                        // 同步 Proxy(data) 的变化到 input.value 上
                     })
                 }
 
-                // 对有同步字段的属性重绘 input 值
+                // 同步 Proxy(data) 的变化到 input.value 上
                 if (hasSyncInputs) {
                     this.#syncInputElements.forEach((el) => {
                         const key = el.dataset.input
@@ -91,7 +95,7 @@ export default class Loon {
                         const key = match.replace(/({{ | }})/g, '')
 
                         // 增量保存需要更新的同步文本的 key
-                        this.#synctexs.push(key)
+                        this.#synctexs.add(key)
 
                         // 添加 "data-synctex" 同步标记。并初始化节点文本值
                         return `<span data-synctex="${key}">${this.data[key]}</span>`
@@ -109,6 +113,12 @@ export default class Loon {
         this.#style = parms.style ? '<style>' + parms.style + '</style>' : ''
 
         this.#observe = parms.observe || []
+        this.#observe = (() => {
+            if (Array.isArray(parms.observe) && parms.observe.length === 0)
+                return new Set()
+
+            return new Set(parms.observe)
+        })()
 
         // Bind callback function
         this.#callback = parms.callback
@@ -146,6 +156,7 @@ export default class Loon {
                     // init element.value
                     el.value = that.data[key]
 
+                    // console.log('bind event listener:', el)
                     el.addEventListener('input', (e) => {
                         // 把 input 属性的变化同步到 Proxy(data)
                         that.data[key] = e.target.value
@@ -157,7 +168,11 @@ export default class Loon {
             }
 
             static get observedAttributes() {
-                return that.#observe.map((e) => 'data-' + e)
+                const array = []
+
+                that.#observe.forEach((value) => array.push('data-' + value))
+
+                return array
             }
 
             // 添加到 DOM 中时触发
