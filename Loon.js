@@ -34,11 +34,13 @@ export default class Loon {
                         )
                             return
 
-                        // if (el.textContent !== this.data[key]) {
-                        console.log(
-                            '@Loon: Redraw text node had Done:',
-                            `${el.textContent} -> ${this.data[key]}`
-                        )
+                        // if (el.textContent !== this.data[key]) {}
+
+                        // console.log(
+                        //     '@Loon: Redraw text node had Done:',
+                        //     `${el.textContent} -> ${this.data[key]}`
+                        // )
+                        
                         el.textContent = this.data[key]
 
                         // if (this.#observe.includes(key)) {
@@ -46,14 +48,6 @@ export default class Loon {
                         //     // 同步到元素 dataset 属性上
                         //     this.$element.dataset[key] = value
                         // }
-                        // }
-
-                        // slot 方案
-                        // const slot = this.$element.querySelectorAll(`[slot=${key}]`)
-                        // slot.forEach((e) => {
-                        //     e.textContent = this.data[key]
-                        // })
-                        // slot.textContent = this.data[key]
                     })
                 }
 
@@ -112,7 +106,6 @@ export default class Loon {
 
         this.#style = parms.style ? '<style>' + parms.style + '</style>' : ''
 
-        this.#observe = parms.observe || []
         this.#observe = (() => {
             if (Array.isArray(parms.observe) && parms.observe.length === 0)
                 return new Set()
@@ -137,13 +130,8 @@ export default class Loon {
                 that.$element = this
                 that.$shadow = this.shadow
 
-                // slot 方案 init
-                // Object.keys(that.data).forEach((key) => {
-                //     const span = document.createElement('span')
-                //     span.textContent = that.data[key]
-                //     span.setAttribute('slot', key)
-                //     this.appendChild(span)
-                // })
+                if (that.#callback && that.#callback.constructedCallback)
+                    that.#callback.constructedCallback.call(that)
             }
 
             #bind() {

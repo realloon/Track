@@ -1,7 +1,8 @@
 import Loon from './Loon.js'
 
 class Database {
-    //FIXME: 初始化时应及时处理
+    // FIXME: 初始化时应及时处理
+    // TODO: Map 储存
     static _data = JSON.parse(localStorage.getItem('TrackDatabase'))
 
     static get data() {
@@ -76,122 +77,6 @@ class Database {
 
     static clearData() {
         localStorage.removeItem('TrackDatabase')
-    }
-}
-
-class TaskCard extends HTMLElement {
-    constructor() {
-        super()
-        this.shadow = this.attachShadow({ mode: 'closed' })
-
-        this.key = this.dataset.key
-        this.data = Database.data[this.key]
-
-        this.render()
-        this.eventBind()
-    }
-
-    connectedCallback() {
-        this.updataCountView()
-    }
-
-    get count() {
-        let count = 0
-        const lists = Database.data[this.key].time
-
-        lists.forEach((list) => {
-            if (list.length === 2) {
-                count += list[1] - list[0]
-            }
-        })
-
-        return (count / 60000).toFixed(2)
-    }
-
-    get lastCount() {
-        const lists = Database.data[this.key].time
-        const lastList = lists[lists.length - 1]
-        let lastCount = 0
-
-        lastList.length === 2
-            ? (lastCount = lastList[1] - lastList[0])
-            : (lastCount = new Date().getTime() - lastList[0])
-
-        return (lastCount / 60000).toFixed(2)
-    }
-
-    get started() {
-        const lists = Database.data[this.key].time
-        const lastList = lists[lists.length - 1]
-        return lastList.length !== 2
-    }
-
-    render() {
-        this.shadow.innerHTML = `
-            <style>
-                .card {
-                    background: #fff;
-                    padding: 16px;
-                    margin: 16px;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    font-size: 16px;
-                }
-
-                .icon {
-                    font-size: 1.5em;
-                    
-                    height: 24px;
-                    line-height: 1em;
-                    margin-right: 8px;
-                }
-
-                .title {
-                    font-weight: bold;
-                    margin-right: auto;
-                }
-
-                @media (prefers-color-scheme: dark) {
-                    .card {
-                        background: #1c1c1d;
-                        color: #fff;
-                    }
-                }
-            </style>
-
-            <div class="card">
-                <span class="icon">${this.data.icon}</span>
-                <div class="title">${this.data.title}</div>
-                <span class="counter"></span>
-            </div>
-        `
-    }
-
-    eventBind() {
-        this.shadow.addEventListener('click', () => {
-            Database.updataTimeItems(this.key, new Date().getTime())
-            this.updataCountView()
-        })
-    }
-
-    updataCountView() {
-        const countEl = this.shadow.querySelector('.counter')
-        this.started
-            ? (countEl.textContent = `正在计时：${this.lastCount}min`)
-            : (countEl.textContent = `上次计时：${this.lastCount}min`)
-
-        const that = this
-        ;(function setTime() {
-            setTimeout(() => {
-                if (that.started) {
-                    countEl.textContent = `正在计时：${that.lastCount}min`
-                    setTime()
-                } else {
-                    countEl.textContent = `上次计时：${that.lastCount}min`
-                }
-            }, 600)
-        })()
     }
 }
 
@@ -343,8 +228,6 @@ new Loon('track-ring', {
             const rateCache = this.data.rate
             this.data.rate = 0
             setTimeout(() => (this.data.rate = rateCache))
-
-            console.log('done')
         },
 
         attributeChangedCallback: function () {
@@ -375,13 +258,108 @@ new Loon('task-list', {
     `,
     callback: {
         customCallback: function () {
+            const list = this.data.list
             const array = []
 
-            for (const key of Object.keys(this.data.list)) {
-                array.push(`<task-card data-key="${key}">hello</task-card>`)
+            for (const key of Object.keys(list)) {
+                // array.push(`<task-card data-key="${key}">hello</task-card>`)
+
+                array.push(
+                    `<task-board
+                        data-title="${list[key].title}"
+                        data-icon="${list[key].icon}"
+                    ></task-board>`
+                )
             }
 
             this.$shadow.innerHTML += array.join('')
+        },
+    },
+})
+
+new Loon('task-board', {
+    style: `
+        .card {
+            background: var(--controls-ground);
+            color: var(--font-color);
+            padding: 16px;
+            margin: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .icon {
+            font-size: 1.5em;
+            
+            height: 24px;
+            line-height: 1em;
+            margin-right: 8px;
+        }
+
+        .title {
+            font-weight: bold;
+            margin-right: auto;
+        }
+    `,
+    struc: `
+        <div class="card">
+            <span class="icon">{{ icon }}</span>
+            <div class="title">{{ title }}</div>
+            <span class="counter">{{ state }}计时：{{ lastCount }}min</span>
+        </div>
+    `,
+    observe: ['icon', 'title'],
+    callback: {
+        customCallback: function () {
+            const list = Database.data[this.data.title]
+
+            function getLastCount() {
+                const lastTimeArray = list.time[list.time.length - 1]
+
+                const startTime = lastTimeArray[0]
+                const endTime = lastTimeArray[1] || new Date().getTime()
+
+                const lastCount = endTime - startTime
+
+                return (lastCount / 60000).toFixed(2)
+            }
+
+            function isRunning() {
+                const listTimeArray = list.time[list.time.length - 1]
+                return listTimeArray.length < 2
+            }
+            // function
+            const cycleUpdataCountView = () => {
+                if (!isRunning()) return
+
+                const updataCountView = () => {
+                    setTimeout(() => {
+                        this.data.lastCount = getLastCount()
+                        updataCountView()
+                    }, 600)
+                }
+
+                updataCountView()
+            }
+            // function
+            const updataStateView = () => {
+                return (this.data.state = isRunning() ? '当前' : '上次')
+            }
+
+            this.data.lastCount = getLastCount()
+
+            updataStateView()
+            cycleUpdataCountView()
+
+            this.$element.addEventListener('click', () => {
+                const time = new Date().getTime()
+                Database.updataTimeItems(list.title, time)
+
+                updataStateView()
+            })
         },
     },
 })
@@ -530,5 +508,3 @@ new Loon('develop-card', {
         },
     },
 })
-
-window.customElements.define('task-card', TaskCard)
